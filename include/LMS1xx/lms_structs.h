@@ -203,4 +203,23 @@ struct scanData
   uint16_t rssi2[1082];
 };
 
+// TODO consider to use those for LMS as well
+struct dataChannel
+{
+  int channel_nr;
+  uint16_t data_len;
+  uint16_t dist[1082];
+  uint16_t rssi[1082];
+};
+
+struct scanDataLayerMRS
+{
+  int scan_nr;
+  uint32_t time_since_startup;
+  uint32_t transmission_duration;
+  double layer_angle;
+  int layer_nr; // starting from 0;
+  dataChannel channel[3];
+};
+
 #endif  // LMS1XX_LMS_STRUCTS_H_
