@@ -199,7 +199,7 @@ bool MRS1000::parseScanLayer(char *buffer, scanDataLayerMRS *scan_data)
     tok = strtok(NULL, " "); //Angular step width
     tok = strtok(NULL, " "); //NumberData
 
-    sscanf(tok, "%x", &p_channel->data_len);
+    sscanf(tok, "%hx", &p_channel->data_len);
     logDebug("NumberData : %d", p_channel->data_len);
 
     // READ data from 16 bit channel
@@ -299,7 +299,7 @@ bool MRS1000::parseScanLayerLMSProtocol(char *buffer, scanDataLayerMRS *scan_dat
   tok = strtok(NULL, " "); //Layer angle
 
   uint16_t layer_angle_hex;
-  sscanf(tok, "%x", &layer_angle_hex);
+  sscanf(tok, "%hx", &layer_angle_hex);
   int16_t layer_angle_int = static_cast<int16_t>(layer_angle_hex);
   scan_data->layer_angle = static_cast<double>(layer_angle_int) / 100.0;
 
@@ -390,7 +390,7 @@ bool MRS1000::parseScanLayerLMSProtocol(char *buffer, scanDataLayerMRS *scan_dat
     tok = strtok(NULL, " "); //Angular step width
     tok = strtok(NULL, " "); //NumberData
 
-    sscanf(tok, "%x", &p_channel->data_len);
+    sscanf(tok, "%hx", &p_channel->data_len);
 
     // READ data from 16 bit channel
     for (int i = 0; i < p_channel->data_len; i++)
