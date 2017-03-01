@@ -64,7 +64,8 @@ bool MRS1000::parseScanLayer(char *buffer, scanDataLayerMRS *scan_data)
   tok = strtok(NULL, " "); //VersionNumber
   tok = strtok(NULL, " "); //DeviceNumber
   tok = strtok(NULL, " "); //Serial number
-  tok = strtok(NULL, " "); //DeviceStatus TODO
+  tok = strtok(NULL, " "); //DeviceStatus1 TODO
+  tok = strtok(NULL, " "); //DeviceStatus2 TODO
   tok = strtok(NULL, " "); //MessageCounter TODO
   tok = strtok(NULL, " "); //ScanCounter TODO
   sscanf(tok, "%u", &scan_data->scan_nr);
@@ -72,8 +73,10 @@ bool MRS1000::parseScanLayer(char *buffer, scanDataLayerMRS *scan_data)
   sscanf(tok, "%u", &scan_data->time_since_startup);
   tok = strtok(NULL, " "); //TransmissionDuration
   sscanf(tok, "%u", &scan_data->transmission_duration);
-  tok = strtok(NULL, " "); //InputStatus
-  tok = strtok(NULL, " "); //OutputStatus
+  tok = strtok(NULL, " "); //InputStatus1
+  tok = strtok(NULL, " "); //InputStatus2
+  tok = strtok(NULL, " "); //OutputStatus1
+  tok = strtok(NULL, " "); //OutputStatus2
   tok = strtok(NULL, " "); //Layer angle
   int layer_angle_int;
   sscanf(tok, "%d", &layer_angle_int);
@@ -102,11 +105,6 @@ bool MRS1000::parseScanLayer(char *buffer, scanDataLayerMRS *scan_data)
   tok = strtok(NULL, " "); //MeasurementFrequency
   // TODO
 
-  // why are those here?? Not part of protocol!
-  tok = strtok(NULL, " ");
-  tok = strtok(NULL, " ");
-  tok = strtok(NULL, " ");
-
   tok = strtok(NULL, " "); //NumberEncoders
   int NumberEncoders;
   sscanf(tok, "%d", &NumberEncoders);
@@ -119,11 +117,6 @@ bool MRS1000::parseScanLayer(char *buffer, scanDataLayerMRS *scan_data)
   tok = strtok(NULL, " "); //NumberChannels16Bit
   int NumberChannels16Bit;
   sscanf(tok, "%d", &NumberChannels16Bit);
-  if (NumberChannels16Bit != 3)
-  {
-    logError("Parsed %d 16 bit channels, but RMS expects 3!", NumberChannels16Bit);
-    return false;
-  }
 
   dataChannel* p_channel = 0;
   for (int i = 0; i < NumberChannels16Bit; i++)
@@ -133,15 +126,15 @@ bool MRS1000::parseScanLayer(char *buffer, scanDataLayerMRS *scan_data)
     char content[6];
     tok = strtok(NULL, " "); //MeasuredDataContent
     sscanf(tok, "%s", content);
-    if (!strcmp(content, "DIST1"))
+    if (strcmp(content, "DIST1") == 0)
     {
       type = 0;
     }
-    else if (!strcmp(content, "DIST2"))
+    else if (strcmp(content, "DIST2") == 0)
     {
       type = 1;
     }
-    else if (!strcmp(content, "DIST3"))
+    else if (strcmp(content, "DIST3") == 0)
     {
       type = 2;
     }
@@ -164,7 +157,7 @@ bool MRS1000::parseScanLayer(char *buffer, scanDataLayerMRS *scan_data)
     tok = strtok(NULL, " "); //Angular step width
     tok = strtok(NULL, " "); //NumberData
 
-    sscanf(tok, "%u", &p_channel->data_len);
+    sscanf(tok, "%x", &p_channel->data_len);
     logDebug("NumberData : %d", p_channel->data_len);
 
     // READ data from 16 bit channel
