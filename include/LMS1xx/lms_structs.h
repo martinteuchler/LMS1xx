@@ -208,8 +208,8 @@ struct dataChannel
 {
   int channel_nr;
   uint16_t data_len;
-  uint16_t dist[1082];
-  uint16_t rssi[1082];
+  uint16_t dist[1101];
+  uint16_t rssi[1101];
 };
 
 struct scanDataLayerMRS
