@@ -6,9 +6,11 @@ class MRS1000 : public LMS1xx
 {
 public:
   bool getScanData(scanDataLayerMRS* scan_data);
+  bool getScanDataLMSProtocol(scanDataLayerMRS *scan_data);
 
 protected:
   static bool parseScanLayer(char* buffer, scanDataLayerMRS* scan_data);
+  static bool parseScanLayerLMSProtocol(char *buffer, scanDataLayerMRS *scan_data);
 };
 
 #endif // MRS1000_H

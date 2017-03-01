@@ -158,6 +158,18 @@ int main(int argc, char **argv)
     double start_angle = -275/2*DEG2RAD;
     double angle_inc = 0.25*DEG2RAD;
 
+    bool synced = false;
+    int layers_received = 0;
+
+    sensor_msgs::PointCloud2Iterator<float>iter_x(cloud, "x");
+    sensor_msgs::PointCloud2Iterator<float>iter_y(cloud, "y");
+    sensor_msgs::PointCloud2Iterator<float>iter_z(cloud, "z");
+    sensor_msgs::PointCloud2Iterator<float>iter_int(cloud, "intensity");
+    sensor_msgs::PointCloud2Iterator<float>start_iter_x(cloud, "x");
+    sensor_msgs::PointCloud2Iterator<float>start_iter_y(cloud, "y");
+    sensor_msgs::PointCloud2Iterator<float>start_iter_z(cloud, "z");
+    sensor_msgs::PointCloud2Iterator<float>start_iter_int(cloud, "intensity");
+
     while (ros::ok())
     {
       ros::Time start = ros::Time::now();
@@ -166,22 +178,41 @@ int main(int argc, char **argv)
 
       scanDataLayerMRS data;
       ROS_DEBUG("Reading scan data.");
-      if (laser.getScanData(&data))
+
+      if (laser.getScanDataLMSProtocol(&data))
       {
-        sensor_msgs::PointCloud2Iterator<float>iter_x(cloud, "x");
-        sensor_msgs::PointCloud2Iterator<float>iter_y(cloud, "y");
-        sensor_msgs::PointCloud2Iterator<float>iter_z(cloud, "z");
-        sensor_msgs::PointCloud2Iterator<float>iter_int(cloud, "intensity");
-        for (size_t j = 0; j < (sizeof(data.channel)/sizeof(*(data.channel))); ++j)
+
+	// reset iterators and layer counter when receiving the first one, so we collect all layers in one cloud
+        if (data.first)
+        {
+          iter_x = start_iter_x;
+          iter_y = start_iter_y;
+          iter_z = start_iter_z;
+          iter_int = start_iter_int;
+          synced = true;
+          layers_received = 0;
+        }
+
+
+        if (!synced)
+          continue;
+
+	// if we would want to use all channels (i.e. all echos), we need to handle this better
+	// i.e. without specifying this with fixed values...
+	// for now, just use the first echo
+	// for (size_t j = 0; j < (sizeof(data.channel)/sizeof(*(data.channel))); ++j)
+        for (size_t j = 0; j < 1; ++j)
         {
           for (int i = 0; i < data.channel[j].data_len; ++i, ++iter_x, ++iter_y, ++iter_z, ++ iter_int)
           {
-            dist_from_scan(*iter_x, *iter_y, *iter_z, data.channel[j].dist[i]*0.001, start_angle+i*angle_inc, -0.01*data.layer_angle);
+            dist_from_scan(*iter_x, *iter_y, *iter_z, data.channel[j].dist[i]*0.001, start_angle+i*angle_inc, -data.layer_angle*DEG2RAD);
             *iter_int = data.channel[j].rssi[i];
           }
         }
+        ++layers_received;
         ROS_DEBUG("Publishing scan data.");
-        cloud_pub.publish(cloud);
+        if (layers_received == 4)
+          cloud_pub.publish(cloud);
       }
       else
       {

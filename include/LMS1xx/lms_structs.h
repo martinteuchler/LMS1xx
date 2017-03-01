@@ -214,6 +214,7 @@ struct dataChannel
 
 struct scanDataLayerMRS
 {
+  bool first;
   int scan_nr;
   uint32_t time_since_startup;
   uint32_t transmission_duration;
