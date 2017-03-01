@@ -16,7 +16,7 @@
 #include "console_bridge/console.h"
 
 // Get scan data for one layer
-MRS1000::getScanData(scanDataLayerMRS *scan_data)
+bool MRS1000::getScanData(scanDataLayerMRS *scan_data)
 {
   fd_set rfds;
   FD_ZERO(&rfds);
@@ -44,7 +44,7 @@ MRS1000::getScanData(scanDataLayerMRS *scan_data)
 
       if (buffer_data)
       {
-        parseScanData(buffer_data, scan_data);
+        parseScanLayer(buffer_data, scan_data);
         buffer_.popLastBuffer();
         return true;
       }
@@ -57,7 +57,7 @@ MRS1000::getScanData(scanDataLayerMRS *scan_data)
   }
 }
 
-static bool MRS1000::parseScanLayer(char *buf, scanDataLayerMRS *scan_data)
+bool MRS1000::parseScanLayer(char *buffer, scanDataLayerMRS *scan_data)
 {
   char* tok = strtok(buffer, " "); //Type of command
   tok = strtok(NULL, " "); //Command
@@ -93,7 +93,7 @@ static bool MRS1000::parseScanLayer(char *buf, scanDataLayerMRS *scan_data)
     scan_data->layer_nr = 3;
   } else
   {
-    logError("layer angle not supported: %f shold be one of (2.5, 0, -2.5, -5)", layer_angle);
+    logError("layer angle not supported: %f shold be one of (2.5, 0, -2.5, -5)", scan_data->layer_angle);
     return false;
   }
 
@@ -125,10 +125,10 @@ static bool MRS1000::parseScanLayer(char *buf, scanDataLayerMRS *scan_data)
     return false;
   }
 
+  dataChannel* p_channel = 0;
   for (int i = 0; i < NumberChannels16Bit; i++)
   {
     int type = -1; // 0 DIST1 1 DIST2 2 DIST3
-    dataChannel* p_channel = 0;
 
     char content[6];
     tok = strtok(NULL, " "); //MeasuredDataContent
@@ -164,7 +164,7 @@ static bool MRS1000::parseScanLayer(char *buf, scanDataLayerMRS *scan_data)
     tok = strtok(NULL, " "); //Angular step width
     tok = strtok(NULL, " "); //NumberData
 
-    sscanf(tok, "%X", &p_channel->data_len);
+    sscanf(tok, "%u", &p_channel->data_len);
     logDebug("NumberData : %d", p_channel->data_len);
 
     // READ data from 16 bit channel
@@ -185,6 +185,7 @@ static bool MRS1000::parseScanLayer(char *buf, scanDataLayerMRS *scan_data)
     logError("Number of 8 bit channels (%u) not 3!", NumberChannels8Bit);
     return false;
   }
+
   logDebug("NumberChannels8Bit : %d\n", NumberChannels8Bit);
 
   for (int i = 0; i < NumberChannels8Bit; i++)

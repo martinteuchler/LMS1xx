@@ -8,7 +8,7 @@ public:
   bool getScanData(scanDataLayerMRS* scan_data);
 
 protected:
-  static bool parseScanData(char* buf, scanDataLayerMRS* scan_data);
+  static bool parseScanLayer(char* buffer, scanDataLayerMRS* scan_data);
 };
 
 #endif // MRS1000_H

@@ -4,8 +4,13 @@ project(lms1xx)
 # Build ROS-independent library.
 find_package(console_bridge REQUIRED)
 include_directories(include ${console_bridge_INCLUDE_DIRS})
+
 add_library(LMS1xx src/LMS1xx.cpp)
 target_link_libraries(LMS1xx ${console_bridge_LIBRARIES})
+
+add_library(MRS1000 src/MRS1000.cpp)
+target_link_libraries(MRS1000 LMS1xx ${console_bridge_LIBRARIES})
+
 
 # Regular catkin package follows.
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs)
@@ -15,8 +20,11 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 add_executable(LMS1xx_node src/LMS1xx_node.cpp)
 target_link_libraries(LMS1xx_node LMS1xx ${catkin_LIBRARIES})
 
+add_executable(MRS1000_node src/MRS1000_node.cpp)
+target_link_libraries(MRS1000_node MRS1000 ${catkin_LIBRARIES})
+add_dependencies(MRS1000_node MRS1000)
 
-install(TARGETS LMS1xx LMS1xx_node
+install(TARGETS LMS1xx LMS1xx_node MRS1000 MRS1000_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

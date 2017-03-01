@@ -17,7 +17,7 @@
 
 #include <csignal>
 #include <cstdio>
-#include <LMS1xx/LMS1xx.h>
+#include <LMS1xx/MRS1000.h>
 #include "ros/ros.h"
 #include "sensor_msgs/PointCloud2.h"
 #include <sensor_msgs/point_cloud2_iterator.h>
@@ -27,7 +27,7 @@
 // those are basically spherical coordinate
 void dist_from_scan(float &out_x, float &out_y, float &out_z, float dist, float angle, float vertical_angle)
 {
-  out_x = dist * cos(step*) * cos(vertical_angle);
+  out_x = dist * cos(angle) * cos(vertical_angle);
   out_y = dist * sin(angle) * cos(vertical_angle);
   out_z = dist * sin(vertical_angle);
 }
@@ -35,7 +35,7 @@ void dist_from_scan(float &out_x, float &out_y, float &out_z, float dist, float 
 int main(int argc, char **argv)
 {
   // laser data
-  LMS1xx laser;
+  MRS1000 laser;
   scanCfg cfg;
   scanOutputRange outputRange;
   scanDataCfg dataCfg;
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
     "y", 1, sensor_msgs::PointField::FLOAT32,
     "z", 1, sensor_msgs::PointField::FLOAT32,
     "intensity", 1, sensor_msgs::PointField::FLOAT32);
-  modifier.setPointCloud2FieldsByString(2, "xyz", "intensity");
+  //modifier.setPointCloud2FieldsByString(2, "xyz", "intensity");
   cloud.is_bigendian = false;
   cloud.is_dense = false;
 
@@ -163,22 +163,23 @@ int main(int argc, char **argv)
       ros::Time start = ros::Time::now();
 
       cloud.header.stamp = start;
-      ++cloud.header.seq;
 
-      scanData data;
+      scanDataLayerMRS data;
       ROS_DEBUG("Reading scan data.");
       if (laser.getScanData(&data))
       {
-        sensor_msgs::PointCloud2Iterator<float>iter_x(msg_pointcloud, "x");
-        sensor_msgs::PointCloud2Iterator<float>iter_y(msg_pointcloud, "y");
-        sensor_msgs::PointCloud2Iterator<float>iter_z(msg_pointcloud, "z");
-        sensor_msgs::PointCloud2Iterator<float>iter_int(msg_pointcloud, "intensity");
-        for (int i = 0; i < data.dist_len1; ++i, ++iter_x, ++iter_y, ++iter_z, ++ iter_int)
+        sensor_msgs::PointCloud2Iterator<float>iter_x(cloud, "x");
+        sensor_msgs::PointCloud2Iterator<float>iter_y(cloud, "y");
+        sensor_msgs::PointCloud2Iterator<float>iter_z(cloud, "z");
+        sensor_msgs::PointCloud2Iterator<float>iter_int(cloud, "intensity");
+        for (size_t j = 0; j < (sizeof(data.channel)/sizeof(*(data.channel))); ++j)
         {
-          dist_from_scan(*iter_x, *iter_y, iter_z*, data.dist[i]*0.001, start_angle+i*angle_inc, -0.01*data.layer[i]);
-          *iter_int = data.rssi1[i];
+          for (int i = 0; i < data.channel[j].data_len; ++i, ++iter_x, ++iter_y, ++iter_z, ++ iter_int)
+          {
+            dist_from_scan(*iter_x, *iter_y, *iter_z, data.channel[j].dist[i]*0.001, start_angle+i*angle_inc, -0.01*data.layer_angle);
+            *iter_int = data.channel[j].rssi[i];
+          }
         }
-
         ROS_DEBUG("Publishing scan data.");
         cloud_pub.publish(cloud);
       }
