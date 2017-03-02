@@ -155,7 +155,7 @@ int main(int argc, char **argv)
     ROS_DEBUG("Commanding continuous measurements.");
     laser.scanContinous(1);
 
-    double start_angle = -275/2*DEG2RAD;
+    double start_angle = -275.0/2.0*DEG2RAD;
     double angle_inc = 0.25*DEG2RAD;
 
     bool synced = false;
