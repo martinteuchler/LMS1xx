@@ -18,8 +18,8 @@
 #include <csignal>
 #include <cstdio>
 #include <LMS1xx/MRS1000.h>
-#include "ros/ros.h"
-#include "sensor_msgs/PointCloud2.h"
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 #define DEG2RAD M_PI/180.0
