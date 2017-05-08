@@ -233,11 +233,6 @@ bool CoLaA::get_scan_data(scanData *scan_data)
   }
 }
 
-void CoLaA::printTest()
-{
-  std::cout << LOGIN_COMMAND << std::endl;
-}
-
 void CoLaA::do_login(std::string user_class, std::string password)
 {
    std::string command = LOGIN_COMMAND + " " + user_class + " " + password;

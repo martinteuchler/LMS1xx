@@ -44,28 +44,89 @@ public:
   */
   bool is_connected() const;
 
+  /*!
+  * @brief Log into device
+  * Increase privilege level, giving ability to change device configuration.
+  */
   void login();
 
+  /*!
+  * @brief The device is returned to the measurement mode after configuration.
+  *
+  */
   void start_device();
 
+  /*!
+  * @brief Start measurements.
+  * After receiving this command the unit starts spinning laser and measuring.
+  */
   void start_measurement();
 
+  /*!
+  * @brief Stop measurements.
+  * After receiving this command LMS1xx unit stop spinning laser and measuring.
+  */
   void stop_measurement();
 
+  /*!
+  * @brief Set scan configuration.
+  * Get scan configuration :
+  * - scanning frequency.
+  * - scanning resolution.
+  * - start angle.
+  * - stop angle.
+  * @param cfg structure containing scan configuration.
+  */
   void set_scan_config(const scanCfg &cfg);
 
+  /*!
+  * @brief Set scan data configuration.
+  * Set format of scan message returned by device.
+  * @param cfg structure containing scan data configuration.
+  */
   void set_scan_data_config(const scanDataCfg &cfg);
 
+  /*!
+  * @brief Get current scan configuration.
+  * Get scan configuration :
+  * - scanning frequency.
+  * - scanning resolution.
+  * - start angle.
+  * - stop angle.
+  * @returns scanCfg structure.
+  */
   scanCfg get_scan_config();
 
+  /*!
+  * @brief Save data permanently.
+  * Parameters are saved in the EEPROM of the LMS and will also be available after the device is switched off and on again.
+  *
+  */
   void save_config();
 
-  // This should be the same for all sensors
+  /*!
+  * @brief Get current status of device.
+  * This should be the same for all sensor types
+  * @returns status of device.
+  */
   Status query_status();
 
-  // Should be same for all
+  /*!
+  * @brief Get current output range configuration.
+  * Get output range configuration :
+  * - scanning resolution.
+  * - start angle.
+  * - stop angle.
+  * Should be the same for all sensor types
+  * @returns scanOutputRange structure.
+  */
   scanOutputRange get_scan_output_range();
 
+  /*!
+  * @brief Start or stop continuous data acquisition.
+  * After reception of this command device start or stop continuous data stream containing scan messages.
+  * @param start true : start false : stop
+  */
   void scan_continuous(bool start);
 
   bool get_scan_data(scanData *scan_data);
@@ -113,5 +174,7 @@ private:
   LMSBuffer *buffer_;
   int socket_fd_;
 };
+
+using LMS1xxx = CoLaA; // The base implementation is for LMS1xxx
 
 #endif // COLAA_H
