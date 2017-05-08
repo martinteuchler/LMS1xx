@@ -19,7 +19,7 @@ add_library(LMS1xx src/LMS1xx.cpp)
 target_link_libraries(LMS1xx ${console_bridge_LIBRARIES})
 
 add_library(MRS1000 src/MRS1000.cpp)
-target_link_libraries(MRS1000 LMS1xx ${console_bridge_LIBRARIES})
+target_link_libraries(MRS1000 CoLaA ${console_bridge_LIBRARIES})
 
 
 # Regular catkin package follows.

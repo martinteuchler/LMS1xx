@@ -129,9 +129,13 @@ public:
   */
   void scan_continuous(bool start);
 
-  bool get_scan_data(scanData *scan_data);
-
-  void printTest();
+  /*!
+  * @brief Receive single scan message.
+  * @return true if scan was read successfully, false if error or timeout. False implies that higher level
+  *         logic should take correct action such as reopening the connection.
+  */
+  // TODO: abstract scan_data
+  bool get_scan_data(void *scan_data);
 
 protected:
   std::string LOGIN_COMMAND;
@@ -162,7 +166,7 @@ protected:
   virtual scanCfg parse_scan_cfg(const char *buf, size_t len);
   virtual std::string build_scan_cfg(const scanCfg &cfg) const;
   virtual std::string build_scan_data_cfg(const scanDataCfg &cfg) const;
-  virtual void parse_scan_data(char *buffer, scanData *data) const;
+  virtual void parse_scan_data(char *buffer, void *data) const;
 
 private:
   void send_command(const std::string &command) const;

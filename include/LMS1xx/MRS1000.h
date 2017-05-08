@@ -1,16 +1,13 @@
 #ifndef MRS1000_H
 #define MRS1000_H
-#include <LMS1xx/LMS1xx.h>
+#include <LMS1xx/colaa.h>
 
-class MRS1000 : public LMS1xx
+class MRS1000 : public CoLaA
 {
 public:
-  bool getScanData(scanDataLayerMRS* scan_data);
-  bool getScanDataLMSProtocol(scanDataLayerMRS *scan_data);
 
 protected:
-  static bool parseScanLayer(char* buffer, scanDataLayerMRS* scan_data);
-  static bool parseScanLayerLMSProtocol(char *buffer, scanDataLayerMRS *scan_data);
+  void parse_scan_data(char *buffer, void *scan_data);
 };
 
 #endif // MRS1000_H

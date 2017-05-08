@@ -1,9 +1,10 @@
 #include "LMS1xx/colaa.h"
 
+#include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h> // sockaddr
 #include <arpa/inet.h> // inet_pton
-#include <iostream>
+#include <console_bridge/console.h>
 
 #include "LMS1xx/lms_buffer.h"
 
@@ -192,7 +193,7 @@ void CoLaA::scan_continuous(bool start)
   read_back();
 }
 
-bool CoLaA::get_scan_data(scanData *scan_data)
+bool CoLaA::get_scan_data(void *scan_data)
 {
   fd_set rfds;
   FD_ZERO(&rfds);
@@ -270,8 +271,9 @@ std::string CoLaA::build_scan_data_cfg(const scanDataCfg &cfg) const
   return std::string(buf);
 }
 
-void CoLaA::parse_scan_data(char *buffer, scanData *data) const
+void CoLaA::parse_scan_data(char *buffer, void *__data) const
 {
+  scanData *data = (scanData *)__data;
   char* tok = strtok(buffer, " "); //Type of command
   tok = strtok(NULL, " "); //Command
   tok = strtok(NULL, " "); //VersionNumber
