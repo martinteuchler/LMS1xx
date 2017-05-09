@@ -23,6 +23,38 @@ public:
     Error = 8 // Not from spec, failed to read status at all
   };
 
+  enum SopasError
+  {
+    Sopas_Ok = 0,
+    Sopas_Error_METHODIN_ACCESDENIED = 1,
+    Sopas_Error_METHODIN_UNKNOWNINDEX = 2,
+    Sopas_Error_VARIABLE_UNKNONWINDEX = 3,
+    Sopas_Error_LOCALCONDITIONFAILED = 4,
+    Sopas_Error_INVALID_DATA = 5,
+    Sopas_Error_UNKNOWN_Error = 6,
+    Sopas_Error_BUFFER_OVERFLOW = 7,
+    Sopas_Error_BUFFER_UNDERFLOW = 8,
+    Sopas_Error_ERROR_UNKNOWN_TYPE = 9,
+    Sopas_Error_VARIABLE_WRITE_aCCESSDENIED = 10,
+    Sopas_Error_UNKNOWN_CMD_FOR_NAMESERVER = 11,
+    Sopas_Error_UNKNOWN_COLA_COMMAND = 12,
+    Sopas_Error_METHODIN_SERVER_BUSY = 13,
+    Sopas_Error_FLEX_OUT_OF_BOUNDS = 14,
+    Sopas_Error_EVENTREG_UNKNOWNINDEX = 15,
+    Sopas_Error_COLA_A_VALUE_OVERFLOW = 16,
+    Sopas_Error_COLA_A_INVALID_CHARACTER = 17,
+    Sopas_Error_OSAI_NO_MESSAGE = 18,
+    Sopas_Error_OSAI_NO_ANSWER_MESSAGE = 19,
+    Sopas_Error_INTERNAL = 20,
+    Sopas_Error_HubAddressCorrupted = 21,
+    Sopas_Error_HubAddressDecoding = 22,
+    Sopas_Error_HubAddressAddressExceeded = 23,
+    Sopas_Error_HubAddressBlankExpected = 24,
+    Sopas_Error_AsyncMethodsAreSuppressed = 25,
+    Sopas_Error_ComplexArraysNotSupported = 26,
+    PARSE_ERROR = 999 // Failed to parse error code
+  };
+
   CoLaA();
   ~CoLaA();
 
@@ -136,6 +168,15 @@ public:
   */
   // TODO: abstract scan_data
   bool get_scan_data(void *scan_data);
+
+  /**
+   * @brief parse_error Parse error code from message
+   * @param buf expected to be at the first character of the ASCII error code in the message.
+   * @param twodigits Whether or not the error code has 2 digits. Can be determined from the message length.
+   * If the message has two digits, it is assumed that buf has a size of at least 2.
+   * @return The parsed error code or PARSE_ERROR if no error code could be parsed
+   */
+  static SopasError parse_error(const char *buf, bool twodigits);
 
 protected:
   std::string LOGIN_COMMAND;

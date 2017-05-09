@@ -54,6 +54,10 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_buffer test/test_buffer.cpp)
   target_link_libraries(test_buffer ${catkin_LIBRARIES})
 
+  catkin_add_gtest(test_colaa test/test_colaa.cpp)
+  target_link_libraries(test_colaa CoLaA ${catkin_LIBRARIES})
+  add_dependencies(test_colaa CoLaA)
+
   find_package(roslint REQUIRED)
   roslint_cpp()
   #roslint_add_test()

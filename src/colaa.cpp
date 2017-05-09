@@ -163,7 +163,7 @@ CoLaA::Status CoLaA::query_status()
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
   CoLaA::Status status = Status::Error;
-  if (read_back(buf, len))
+  if (read_back(buf, len) && len > 10)
   {
     int ret;
     sscanf((buf + 10), "%d", &ret);
@@ -482,14 +482,22 @@ bool CoLaA::read_back(char *buf, size_t &buflen)
     logDebug("No buffer supplied");
     return false;
   }
-  int len = read(socket_fd_, buf, buflen);
+  ssize_t len = read(socket_fd_, buf, buflen);
   bool success = buf[0] == STX;
+  if ((len == 7 || len == 8) && strncmp(&buf[1], "sFA ", 4) == 0)
+  {
+    // This is an error message
+    CoLaA::SopasError err = parse_error(&buf[5], len == 8);
+    logWarn("Received error code %d", err);
+  }
   if (!success)
     logWarn("invalid packet recieved");
   buf[len > 0 ? len : 0] = 0;
   logDebug("RX: %s", buf);
   if (len >= 0)
     buflen = static_cast<size_t>(len);
+  else
+    buflen = 0;
   return success;
 }
 
@@ -498,4 +506,23 @@ bool CoLaA::read_back()
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
   return read_back(buf, len);
+}
+
+CoLaA::SopasError CoLaA::parse_error(const char *buf, bool twodigits)
+{
+  if (!buf)
+  {
+    return SopasError::PARSE_ERROR;
+  }
+  int ones = buf[twodigits ? 1 : 0] - 48;
+  int tens = 0;
+  if (twodigits)
+  {
+    tens = buf[0] - 48;
+  }
+  if (ones < 0 || ones > 9 || tens < 0 || tens > 9)
+  {
+    return SopasError::PARSE_ERROR;
+  }
+  return static_cast<CoLaA::SopasError>(10 * tens + ones);
 }
