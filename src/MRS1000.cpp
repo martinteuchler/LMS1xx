@@ -1,6 +1,7 @@
 #include "LMS1xx/MRS1000.h"
 #include <cstring>
 #include <console_bridge/console.h>
+#include "LMS1xx/lms_structs.h"
 
 void MRS1000::parse_scan_data(char *buffer, void *data)
 {

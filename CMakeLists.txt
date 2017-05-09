@@ -12,7 +12,7 @@ add_compile_options(-std=c++11)
 find_package(console_bridge REQUIRED)
 include_directories(include SYSTEM ${console_bridge_INCLUDE_DIRS})
 
-add_library(CoLaA src/colaa.cpp)
+add_library(CoLaA src/colaa.cpp src/parse_helpers.cpp)
 target_link_libraries(CoLaA ${console_bridge_LIBRARIES})
 
 add_library(LMS1xx src/LMS1xx.cpp)

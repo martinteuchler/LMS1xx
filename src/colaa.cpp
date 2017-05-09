@@ -10,6 +10,8 @@
 #include <inttypes.h>
 
 #include "LMS1xx/lms_buffer.h"
+#include "LMS1xx/parse_helpers.h"
+#include "LMS1xx/lms_structs.h"
 
 constexpr uint8_t STX = 0x02; //Start transmission marker
 constexpr uint8_t ETX = 0x03; //End transmission marker
@@ -127,7 +129,7 @@ void CoLaA::stop_measurement()
   read_back();
 }
 
-void CoLaA::set_scan_config(const scanCfg &cfg)
+void CoLaA::set_scan_config(const ScanConfig &cfg)
 {
   std::string command = SET_SCAN_CFG_COMMAND + " " + build_scan_cfg(cfg);
   send_command(command);
@@ -135,7 +137,7 @@ void CoLaA::set_scan_config(const scanCfg &cfg)
   read_back();
 }
 
-void CoLaA::set_scan_data_config(const scanDataCfg &cfg)
+void CoLaA::set_scan_data_config(const ScanDataConfig &cfg)
 {
   std::string command = SET_SCAN_DATA_CFG_COMMAND + " " + build_scan_data_cfg(cfg);
   send_command(command);
@@ -143,7 +145,7 @@ void CoLaA::set_scan_data_config(const scanDataCfg &cfg)
   read_back();
 }
 
-scanCfg CoLaA::get_scan_config()
+ScanConfig CoLaA::get_scan_config()
 {
   send_command(READ_SCAN_CFG_COMMAND);
   char buf[DEF_BUF_LEN];
@@ -159,34 +161,38 @@ void CoLaA::save_config()
   read_back();
 }
 
-CoLaA::Status CoLaA::query_status()
+CoLaAStatus::Status CoLaA::query_status()
 {
   send_command(QUERY_STATUS_COMMAND);
 
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
-  CoLaA::Status status = Status::Error;
+  CoLaAStatus::Status status = CoLaAStatus::Error;
   if (read_back(buf, len) && len > 10)
   {
     int ret;
     sscanf((buf + 10), "%d", &ret);
-    status = static_cast<CoLaA::Status>(ret);
+    status = static_cast<CoLaAStatus::Status>(ret);
   }
   return status;
 }
 
-scanOutputRange CoLaA::get_scan_output_range()
+ScanOutputRange CoLaA::get_scan_output_range()
 {
   send_command(READ_SCAN_OUTPUT_RANGE_COMMAND);
 
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
   read_back(buf, len);
-  // TODO: Clean up
-  scanOutputRange outputRange;
-  sscanf(buf + 1, "%*s %*s %*d %X %X %X", &outputRange.angleResolution,
-         &outputRange.startAngle, &outputRange.stopAngle);
-  return outputRange;
+  char *parsable = &buf[0];
+  ScanOutputRange range;
+  next_token(&parsable); // command type
+  next_token(&parsable); // command name
+  next_token(&parsable, range.num_sectors);
+  next_token(&parsable, range.angular_resolution);
+  next_token(&parsable, range.start_angle);
+  next_token(&parsable, range.stop_angle);
+  return range;
 }
 
 void CoLaA::scan_continuous(bool start)
@@ -243,37 +249,45 @@ void CoLaA::do_login(std::string user_class, std::string password)
    send_command(command);
 }
 
-scanCfg CoLaA::parse_scan_cfg(const char *buf, size_t len)
+ScanConfig CoLaA::parse_scan_cfg(char *buf, size_t len)
 {
-  scanCfg cfg;
-  // TODO make more better?
-  sscanf(buf + 1, "%*s %*s %X %d %X %X %X", &cfg.scaningFrequency, &cfg.activeSensors,
-         &cfg.angleResolution, &cfg.startAngle, &cfg.stopAngle);
+  ScanConfig cfg;
+  next_token(&buf); // Command type
+  next_token(&buf); // Command name
+  next_token(&buf, cfg.scan_frequency);
+  next_token(&buf, cfg.num_sectors);
+  next_token(&buf, cfg.angualr_resolution);
+  next_token(&buf, cfg.start_ange);
+  next_token(&buf, cfg.stop_angle);
   return cfg;
 }
 
-std::string CoLaA::build_scan_cfg(const scanCfg &cfg) const
+std::string CoLaA::build_scan_cfg(const ScanConfig &cfg) const
 {
+  if (cfg.num_sectors > 1)
+  {
+    logWarn("This method does not support configuring multiple sectors");
+  }
   std::stringstream ss;
-  ss << std::uppercase << std::hex << cfg.scaningFrequency << " +" << std::dec << cfg.activeSensors << " "
-     << std::hex << cfg.angleResolution << " " << cfg.startAngle << " " << cfg.stopAngle;
+  ss << std::uppercase << std::hex << cfg.scan_frequency << " +" << std::dec << std::min(cfg.num_sectors, (int16_t)1) << " "
+     << std::hex << cfg.angualr_resolution << " " << cfg.start_ange << " " << cfg.stop_angle;
   logDebug("TX: %s", ss.str().c_str());
   return ss.str();
 }
 
-std::string CoLaA::build_scan_data_cfg(const scanDataCfg &cfg) const
+std::string CoLaA::build_scan_data_cfg(const ScanDataConfig &cfg) const
 {
   std::stringstream ss;
-  ss << build_scan_data_cfg_output_channel(cfg.outputChannel);
+  ss << build_scan_data_cfg_output_channel(cfg.output_channel);
   ss << " " << cfg.remission;
   ss << " " << cfg.resolution;
   ss << " 0"; // Resolution, always 0
   ss << " " << build_scan_data_cfg_encoder(cfg.encoder);
   ss << " " << cfg.position;
-  ss << " " << cfg.deviceName;
+  ss << " " << cfg.device_name;
   ss << " " << cfg.comment;
   ss << " " << cfg.timestamp;
-  ss << " +" << cfg.outputInterval;
+  ss << " +" << cfg.output_interval;
   return ss.str();
 }
 
@@ -310,8 +324,8 @@ void CoLaA::parse_scan_data(char *buffer, void *__data) const
   ScanDataHeader header = parse_scan_data_header(&buffer);
   (void)header; // Unused
   parse_scan_data_encoderdata(&buffer);
-  std::vector<CoLaA::ChannelData<uint16_t> > channels_16bit = ChannelData<uint16_t>::parse_scan_data_channels(&buffer);
-  std::vector<CoLaA::ChannelData<uint8_t> > channels_8bit = ChannelData<uint8_t>::parse_scan_data_channels(&buffer);
+  std::vector<ChannelData<uint16_t> > channels_16bit = ChannelData<uint16_t>::parse_scan_data_channels(&buffer);
+  std::vector<ChannelData<uint8_t> > channels_8bit = ChannelData<uint8_t>::parse_scan_data_channels(&buffer);
 
   // These seem to contain the dist values
   for (size_t i = 0; i < channels_16bit.size(); ++i)
@@ -365,7 +379,7 @@ void CoLaA::parse_scan_data(char *buffer, void *__data) const
   }
 }
 
-CoLaA::ScanDataHeader CoLaA::parse_scan_data_header(char **buf) const
+ScanDataHeader CoLaA::parse_scan_data_header(char **buf) const
 {
   ScanDataHeader header;
   next_token(buf); // Command Type, either sRN or sNA
@@ -408,18 +422,6 @@ void CoLaA::parse_scan_data_encoderdata(char **buf) const
    }
 }
 
-CoLaA::ChannelDataHeader CoLaA::parse_scan_data_channel_header(char **buf)
-{
-  ChannelDataHeader header;
-  next_token(buf, header.contents);
-  next_token(buf, header.scale_factor);
-  next_token(buf, header.scale_factor_offset);
-  next_token(buf, header.start_angle);
-  next_token(buf, header.step_size);
-  next_token(buf, header.data_count);
-  return header;
-}
-
 void CoLaA::send_command(const std::string &command) const
 {
   send_command(command.c_str());
@@ -449,7 +451,7 @@ bool CoLaA::read_back(char *buf, size_t &buflen)
   if ((len == 7 || len == 8) && strncmp(&buf[1], "sFA ", 4) == 0)
   {
     // This is an error message
-    CoLaA::SopasError err = parse_error(&buf[5], len == 8);
+    CoLaASopasError::SopasError err = CoLaASopasError::parse_error(&buf[5], len == 8);
     logWarn("Received error code %d", err);
   }
   if (!success)
@@ -468,93 +470,4 @@ bool CoLaA::read_back()
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
   return read_back(buf, len);
-}
-
-void CoLaA::next_token(char **buf, uint8_t &val)
-{
-  char *str = strtok(*buf, " ");
-  sscanf(str, "%hhx", &val);
-  *buf += strlen(str) + 1;
-}
-
-void CoLaA::next_token(char **buf, uint16_t &val)
-{
-  char *str = strtok(*buf, " ");
-  sscanf(str, "%hx", &val);
-  *buf += strlen(str) + 1;
-}
-
-void CoLaA::next_token(char **buf, uint32_t &val)
-{
-  char *str = strtok(*buf, " ");
-  sscanf(str, "%x", &val);
-  *buf += strlen(str) + 1;
-}
-
-void CoLaA::next_token(char **buf, int32_t &val)
-{
-  uint32_t temp;
-  next_token(buf, temp);
-  val = temp;
-}
-
-void CoLaA::next_token(char **buf, float &val)
-{
-  char *str = strtok(*buf, " ");
-  val = *reinterpret_cast<float *>(str);
-  *buf += strlen(str) + 1;
-}
-
-void CoLaA::next_token(char **buf, std::string &val)
-{
-  char *str = strtok(*buf, " ");
-  val = std::string(str);
-  *buf += strlen(str) + 1;
-}
-
-void CoLaA::next_token(char **buf)
-{
-  strtok(*buf, " ");
-  *buf += strlen(*buf) + 1;
-}
-
-CoLaA::SopasError CoLaA::parse_error(const char *buf, bool twodigits)
-{
-  if (!buf)
-  {
-    return SopasError::PARSE_ERROR;
-  }
-  int ones = buf[twodigits ? 1 : 0] - 48;
-  int tens = 0;
-  if (twodigits)
-  {
-    tens = buf[0] - 48;
-  }
-  if (ones < 0 || ones > 9 || tens < 0 || tens > 9)
-  {
-    return SopasError::PARSE_ERROR;
-  }
-  return static_cast<CoLaA::SopasError>(10 * tens + ones);
-}
-
-template<typename T>
-std::vector<CoLaA::ChannelData<T> > CoLaA::ChannelData<T>::parse_scan_data_channels(char **buf)
-{
-  std::vector<CoLaA::ChannelData<T> > channels;
-  uint16_t num_channels = 0;
-  next_token(buf, num_channels);
-  for (uint16_t channel = 0; channel < num_channels; ++channel)
-  {
-    ChannelData<T> chan;
-    chan.header = parse_scan_data_channel_header(buf);
-    chan.data.resize(chan.header.data_count);
-    T data_n;
-    for (uint16_t d = 0; d < chan.header.data_count; ++d)
-    {
-      next_token(buf, data_n);
-      chan.data[d] = data_n;
-    }
-    channels.push_back(chan);
-  }
-  return channels;
 }
