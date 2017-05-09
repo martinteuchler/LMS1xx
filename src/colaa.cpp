@@ -7,6 +7,7 @@
 #include <console_bridge/console.h>
 #include <sstream>
 #include <iomanip>
+#include <inttypes.h>
 
 #include "LMS1xx/lms_buffer.h"
 
@@ -294,191 +295,129 @@ std::string CoLaA::build_scan_data_cfg_encoder(int enc) const
   return "00 00"; // Data sheet says "No encoder: 0, but that produces an error"
 }
 
+// Dangerous hack!
+void copy_vector(std::vector<uint8_t> &src, uint16_t *dest)
+{
+  for (size_t i = 0; i < src.size(); ++i)
+  {
+    dest[i] = src[i];
+  }
+}
+
 void CoLaA::parse_scan_data(char *buffer, void *__data) const
 {
   scanData *data = (scanData *)__data;
-  char* tok = strtok(buffer, " "); //Type of command
-  tok = strtok(NULL, " "); //Command
-  tok = strtok(NULL, " "); //VersionNumber
-  tok = strtok(NULL, " "); //DeviceNumber
-  tok = strtok(NULL, " "); //Serial number
-  tok = strtok(NULL, " "); //DeviceStatus
-  tok = strtok(NULL, " "); //MessageCounter
-  tok = strtok(NULL, " "); //ScanCounter
-  tok = strtok(NULL, " "); //PowerUpDuration
-  tok = strtok(NULL, " "); //TransmissionDuration
-  tok = strtok(NULL, " "); //InputStatus
-  tok = strtok(NULL, " "); //OutputStatus
-  tok = strtok(NULL, " "); //ReservedByteA
-  tok = strtok(NULL, " "); //ScanningFrequency
-  tok = strtok(NULL, " "); //MeasurementFrequency
-  tok = strtok(NULL, " ");
-  tok = strtok(NULL, " ");
-  tok = strtok(NULL, " ");
-  tok = strtok(NULL, " "); //NumberEncoders
-  int NumberEncoders;
-  sscanf(tok, "%d", &NumberEncoders);
-  for (int i = 0; i < NumberEncoders; i++)
+  ScanDataHeader header = parse_scan_data_header(&buffer);
+  (void)header; // Unused
+  parse_scan_data_encoderdata(&buffer);
+  std::vector<CoLaA::ChannelData<uint16_t> > channels_16bit = ChannelData<uint16_t>::parse_scan_data_channels(&buffer);
+  std::vector<CoLaA::ChannelData<uint8_t> > channels_8bit = ChannelData<uint8_t>::parse_scan_data_channels(&buffer);
+
+  // These seem to contain the dist values
+  for (size_t i = 0; i < channels_16bit.size(); ++i)
   {
-    tok = strtok(NULL, " "); //EncoderPosition
-    tok = strtok(NULL, " "); //EncoderSpeed
-  }
-
-  tok = strtok(NULL, " "); //NumberChannels16Bit
-  int NumberChannels16Bit;
-  sscanf(tok, "%d", &NumberChannels16Bit);
-  logDebug("NumberChannels16Bit : %d", NumberChannels16Bit);
-
-  for (int i = 0; i < NumberChannels16Bit; i++)
-  {
-    int type = -1; // 0 DIST1 1 DIST2 2 RSSI1 3 RSSI2
-    char content[6];
-    tok = strtok(NULL, " "); //MeasuredDataContent
-    sscanf(tok, "%s", content);
-    if (!strcmp(content, "DIST1"))
+    if (channels_16bit[i].header.contents == "DIST1")
     {
-      type = 0;
+      data->dist_len1 = channels_16bit[i].header.data_count;
+      memcpy(data->dist1, channels_16bit[i].data.data(), channels_16bit[i].data.size() * sizeof(uint16_t));
     }
-    else if (!strcmp(content, "DIST2"))
+    else if (channels_16bit[i].header.contents == "DIST2")
     {
-      type = 1;
+      data->dist_len2 = channels_16bit[i].header.data_count;
+      memcpy(data->dist2, channels_16bit[i].data.data(), channels_16bit[i].data.size() * sizeof(uint16_t));
     }
-    else if (!strcmp(content, "RSSI1"))
+    else if (channels_16bit[i].header.contents == "RSSI1")
     {
-      type = 2;
+      data->rssi_len1 = channels_16bit[i].header.data_count;
+      memcpy(data->rssi1, channels_16bit[i].data.data(), channels_16bit[i].data.size() * sizeof(uint16_t));
     }
-    else if (!strcmp(content, "RSSI2"))
+    else if (channels_16bit[i].header.contents == "RSSI2")
     {
-      type = 3;
-    }
-    tok = strtok(NULL, " "); //ScalingFactor
-    tok = strtok(NULL, " "); //ScalingOffset
-    tok = strtok(NULL, " "); //Starting angle
-    tok = strtok(NULL, " "); //Angular step width
-    tok = strtok(NULL, " "); //NumberData
-    int NumberData;
-    sscanf(tok, "%X", &NumberData);
-    logDebug("NumberData : %d", NumberData);
-
-    if (type == 0)
-    {
-      data->dist_len1 = NumberData;
-    }
-    else if (type == 1)
-    {
-      data->dist_len2 = NumberData;
-    }
-    else if (type == 2)
-    {
-      data->rssi_len1 = NumberData;
-    }
-    else if (type == 3)
-    {
-      data->rssi_len2 = NumberData;
-    }
-
-    for (int i = 0; i < NumberData; i++)
-    {
-      int dat;
-      tok = strtok(NULL, " "); //data
-      sscanf(tok, "%X", &dat);
-
-      if (type == 0)
-      {
-        data->dist1[i] = dat;
-      }
-      else if (type == 1)
-      {
-        data->dist2[i] = dat;
-      }
-      else if (type == 2)
-      {
-        data->rssi1[i] = dat;
-      }
-      else if (type == 3)
-      {
-        data->rssi2[i] = dat;
-      }
-
+      data->rssi_len2 = channels_16bit[i].header.data_count;
+      memcpy(data->rssi2, channels_16bit[i].data.data(), channels_16bit[i].data.size() * sizeof(uint16_t));
     }
   }
 
-  tok = strtok(NULL, " "); //NumberChannels8Bit
-  int NumberChannels8Bit;
-  sscanf(tok, "%d", &NumberChannels8Bit);
-  logDebug("NumberChannels8Bit : %d\n", NumberChannels8Bit);
 
-  for (int i = 0; i < NumberChannels8Bit; i++)
+  // These seem to contain the RSSI values
+  for (size_t i = 0; i < channels_8bit.size(); ++i)
   {
-    int type = -1;
-    char content[6];
-    tok = strtok(NULL, " "); //MeasuredDataContent
-    sscanf(tok, "%s", content);
-    if (!strcmp(content, "DIST1"))
+    if (channels_8bit[i].header.contents == "DIST1")
     {
-      type = 0;
+      data->dist_len1 = channels_8bit[i].header.data_count;
+      copy_vector(channels_8bit[i].data, data->dist1);
     }
-    else if (!strcmp(content, "DIST2"))
+    else if (channels_8bit[i].header.contents == "DIST2")
     {
-      type = 1;
+      data->dist_len2 = channels_8bit[i].header.data_count;
+      copy_vector(channels_8bit[i].data, data->dist2);
     }
-    else if (!strcmp(content, "RSSI1"))
+    else if (channels_8bit[i].header.contents == "RSSI1")
     {
-      type = 2;
+      data->rssi_len1 = channels_8bit[i].header.data_count;
+      copy_vector(channels_8bit[i].data, data->rssi1);
     }
-    else if (!strcmp(content, "RSSI2"))
+    else if (channels_8bit[i].header.contents == "RSSI2")
     {
-      type = 3;
-    }
-    tok = strtok(NULL, " "); //ScalingFactor
-    tok = strtok(NULL, " "); //ScalingOffset
-    tok = strtok(NULL, " "); //Starting angle
-    tok = strtok(NULL, " "); //Angular step width
-    tok = strtok(NULL, " "); //NumberData
-    int NumberData;
-    sscanf(tok, "%X", &NumberData);
-    logDebug("NumberData : %d\n", NumberData);
-
-    if (type == 0)
-    {
-      data->dist_len1 = NumberData;
-    }
-    else if (type == 1)
-    {
-      data->dist_len2 = NumberData;
-    }
-    else if (type == 2)
-    {
-      data->rssi_len1 = NumberData;
-    }
-    else if (type == 3)
-    {
-      data->rssi_len2 = NumberData;
-    }
-    for (int i = 0; i < NumberData; i++)
-    {
-      int dat;
-      tok = strtok(NULL, " "); //data
-      sscanf(tok, "%X", &dat);
-
-      if (type == 0)
-      {
-        data->dist1[i] = dat;
-      }
-      else if (type == 1)
-      {
-        data->dist2[i] = dat;
-      }
-      else if (type == 2)
-      {
-        data->rssi1[i] = dat;
-      }
-      else if (type == 3)
-      {
-        data->rssi2[i] = dat;
-      }
+      data->rssi_len2 = channels_8bit[i].header.data_count;
+      copy_vector(channels_8bit[i].data, data->rssi2);
     }
   }
+}
+
+CoLaA::ScanDataHeader CoLaA::parse_scan_data_header(char **buf) const
+{
+  ScanDataHeader header;
+  next_token(buf); // Command Type, either sRN or sNA
+  next_token(buf); // Command: LMDscandata
+
+  next_token(buf, header.version_number);
+
+  next_token(buf, header.device.device_number);
+  next_token(buf, header.device.serial_number);
+  next_token(buf, header.device.device_status_1);
+  next_token(buf, header.device.device_status_2);
+
+  next_token(buf, header.status_info.telegram_counter);
+  next_token(buf, header.status_info.scan_counter);
+  next_token(buf, header.status_info.time_since_startup);
+  next_token(buf, header.status_info.time_of_transmission);
+  next_token(buf, header.status_info.status_digitalin_1);
+  next_token(buf, header.status_info.status_digitalin_2);
+  next_token(buf, header.status_info.status_digitalout_1);
+  next_token(buf, header.status_info.status_digitalout_2);
+  next_token(buf, header.status_info.reserved);
+
+  next_token(buf, header.frequencies.scan_frequency);
+  next_token(buf, header.frequencies.measurement_frequency);
+  // Extracted 18 fields
+  return header;
+}
+
+void CoLaA::parse_scan_data_encoderdata(char **buf) const
+{
+   uint16_t num_encoders = 0;
+   next_token(buf, num_encoders);
+   logDebug("Got %ud encoders", num_encoders);
+   for (uint16_t i = 0; i < num_encoders; ++ i)
+   {
+     uint32_t encoder_position = 0;
+     uint16_t encoder_speed = 0;
+     next_token(buf, encoder_position);
+     next_token(buf, encoder_speed);
+   }
+}
+
+CoLaA::ChannelDataHeader CoLaA::parse_scan_data_channel_header(char **buf)
+{
+  ChannelDataHeader header;
+  next_token(buf, header.contents);
+  next_token(buf, header.scale_factor);
+  next_token(buf, header.scale_factor_offset);
+  next_token(buf, header.start_angle);
+  next_token(buf, header.step_size);
+  next_token(buf, header.data_count);
+  return header;
 }
 
 void CoLaA::send_command(const std::string &command) const
@@ -531,6 +470,54 @@ bool CoLaA::read_back()
   return read_back(buf, len);
 }
 
+void CoLaA::next_token(char **buf, uint8_t &val)
+{
+  char *str = strtok(*buf, " ");
+  sscanf(str, "%hhx", &val);
+  *buf += strlen(str) + 1;
+}
+
+void CoLaA::next_token(char **buf, uint16_t &val)
+{
+  char *str = strtok(*buf, " ");
+  sscanf(str, "%hx", &val);
+  *buf += strlen(str) + 1;
+}
+
+void CoLaA::next_token(char **buf, uint32_t &val)
+{
+  char *str = strtok(*buf, " ");
+  sscanf(str, "%x", &val);
+  *buf += strlen(str) + 1;
+}
+
+void CoLaA::next_token(char **buf, int32_t &val)
+{
+  uint32_t temp;
+  next_token(buf, temp);
+  val = temp;
+}
+
+void CoLaA::next_token(char **buf, float &val)
+{
+  char *str = strtok(*buf, " ");
+  val = *reinterpret_cast<float *>(str);
+  *buf += strlen(str) + 1;
+}
+
+void CoLaA::next_token(char **buf, std::string &val)
+{
+  char *str = strtok(*buf, " ");
+  val = std::string(str);
+  *buf += strlen(str) + 1;
+}
+
+void CoLaA::next_token(char **buf)
+{
+  strtok(*buf, " ");
+  *buf += strlen(*buf) + 1;
+}
+
 CoLaA::SopasError CoLaA::parse_error(const char *buf, bool twodigits)
 {
   if (!buf)
@@ -548,4 +535,26 @@ CoLaA::SopasError CoLaA::parse_error(const char *buf, bool twodigits)
     return SopasError::PARSE_ERROR;
   }
   return static_cast<CoLaA::SopasError>(10 * tens + ones);
+}
+
+template<typename T>
+std::vector<CoLaA::ChannelData<T> > CoLaA::ChannelData<T>::parse_scan_data_channels(char **buf)
+{
+  std::vector<CoLaA::ChannelData<T> > channels;
+  uint16_t num_channels = 0;
+  next_token(buf, num_channels);
+  for (uint16_t channel = 0; channel < num_channels; ++channel)
+  {
+    ChannelData<T> chan;
+    chan.header = parse_scan_data_channel_header(buf);
+    chan.data.resize(chan.header.data_count);
+    T data_n;
+    for (uint16_t d = 0; d < chan.header.data_count; ++d)
+    {
+      next_token(buf, data_n);
+      chan.data[d] = data_n;
+    }
+    channels.push_back(chan);
+  }
+  return channels;
 }

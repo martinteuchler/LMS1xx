@@ -4,6 +4,7 @@
 #include <string>
 #include <stdint.h>
 #include "LMS1xx/lms_structs.h"
+#include <vector>
 
 class LMSBuffer;
 
@@ -53,6 +54,64 @@ public:
     Sopas_Error_AsyncMethodsAreSuppressed = 25,
     Sopas_Error_ComplexArraysNotSupported = 26,
     PARSE_ERROR = 999 // Failed to parse error code
+  };
+
+  struct ScanDataHeader
+  {
+    uint16_t version_number;
+
+    // Device section
+    struct
+    {
+      uint16_t device_number;
+      uint32_t serial_number;
+      uint8_t device_status_1;
+      uint8_t device_status_2;
+    } device;
+
+    // Status info section
+    struct
+    {
+      uint16_t telegram_counter;
+      uint16_t scan_counter;
+      uint32_t time_since_startup;
+      uint32_t time_of_transmission;
+      uint8_t status_digitalin_1; // LMS1xx, LMS5xx, TiM5xx only
+      uint8_t status_digitalin_2; // LMS1xx, LMS5xx, TiM5xx only
+
+      // 00 00 all outputs low
+      // Rest is device dependant
+      uint8_t status_digitalout_1;
+      uint8_t status_digitalout_2;
+
+      uint16_t reserved;
+    } status_info;
+
+    struct
+    {
+      uint32_t scan_frequency;
+      uint32_t measurement_frequency;
+    } frequencies;
+  };
+
+  struct ChannelDataHeader
+  {
+    std::string contents;
+    float scale_factor;
+    float scale_factor_offset;
+    int32_t start_angle; // for 16 bit channels this is uint32_t in the spec sheet, but has
+    // negative values in the range regardless
+    uint16_t step_size;
+    uint16_t data_count;
+  };
+
+  template <typename T>
+  class ChannelData
+  {
+  public:
+    ChannelDataHeader header;
+    std::vector<T> data;
+    static std::vector<CoLaA::ChannelData<T> > parse_scan_data_channels(char **buf);
   };
 
   CoLaA();
@@ -209,12 +268,24 @@ protected:
   virtual std::string build_scan_data_cfg(const scanDataCfg &cfg) const;
   virtual std::string build_scan_data_cfg_output_channel(int ch) const;
   virtual std::string build_scan_data_cfg_encoder(int enc) const;
+
   virtual void parse_scan_data(char *buffer, void *data) const;
+  virtual ScanDataHeader parse_scan_data_header(char **buf) const;
+  virtual void parse_scan_data_encoderdata(char **buf) const;
+  static ChannelDataHeader parse_scan_data_channel_header(char **buf);
 
   void send_command(const std::string &command) const;
   void send_command(const char *command) const;
   bool read_back(char *buf, size_t &buflen);
   bool read_back();
+
+  static void next_token(char **buf, uint8_t &val);
+  static void next_token(char **buf, uint16_t &val);
+  static void next_token(char **buf, uint32_t &val);
+  static void next_token(char **buf, int32_t &val);
+  static void next_token(char **buf, float &val);
+  static void next_token(char **buf, std::string &val);
+  static void next_token(char **buf);
 
 private:
   bool connected_;
