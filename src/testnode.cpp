@@ -55,8 +55,8 @@ int main(int argc, char **argv)
 
     ROS_INFO("Connected to laser.");
 
-    ROS_DEBUG("Laser configuration: scaningFrequency %d, angleResolution %d, startAngle %d, stopAngle %d",
-              cfg.scaningFrequency, cfg.angleResolution, cfg.startAngle, cfg.stopAngle);
+    ROS_DEBUG("Laser configuration: scaningFrequency %d, activeSensors %d, angleResolution %d, startAngle %d, stopAngle %d",
+              cfg.scaningFrequency, cfg.activeSensors, cfg.angleResolution, cfg.startAngle, cfg.stopAngle);
     ROS_DEBUG("Laser output range:angleResolution %d, startAngle %d, stopAngle %d",
               outputRange.angleResolution, outputRange.startAngle, outputRange.stopAngle);
 
@@ -94,6 +94,7 @@ int main(int argc, char **argv)
     dataCfg.encoder = 0;
     dataCfg.position = false;
     dataCfg.deviceName = false;
+    dataCfg.comment = false;
     dataCfg.outputInterval = 1;
 
     ROS_DEBUG("Setting scan data configuration.");

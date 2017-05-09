@@ -5,6 +5,8 @@
 #include <netinet/in.h> // sockaddr
 #include <arpa/inet.h> // inet_pton
 #include <console_bridge/console.h>
+#include <sstream>
+#include <iomanip>
 
 #include "LMS1xx/lms_buffer.h"
 
@@ -244,31 +246,52 @@ scanCfg CoLaA::parse_scan_cfg(const char *buf, size_t len)
 {
   scanCfg cfg;
   // TODO make more better?
-  sscanf(buf + 1, "%*s %*s %X %*d %X %X %X", &cfg.scaningFrequency,
+  sscanf(buf + 1, "%*s %*s %X %d %X %X %X", &cfg.scaningFrequency, &cfg.activeSensors,
          &cfg.angleResolution, &cfg.startAngle, &cfg.stopAngle);
   return cfg;
 }
 
 std::string CoLaA::build_scan_cfg(const scanCfg &cfg) const
 {
-  // TODO: clean up
-  char buf[128];
-  sprintf(buf, "%X +1 %X %X %X%c",
-          cfg.scaningFrequency, cfg.angleResolution, cfg.startAngle,
-          cfg.stopAngle, 0x03);
-  logDebug("TX: %s", buf);
-  return std::string(buf);
+  std::stringstream ss;
+  ss << std::uppercase << std::hex << cfg.scaningFrequency << " +" << std::dec << cfg.activeSensors << " "
+     << std::hex << cfg.angleResolution << " " << cfg.startAngle << " " << cfg.stopAngle;
+  logDebug("TX: %s", ss.str().c_str());
+  return ss.str();
 }
 
 std::string CoLaA::build_scan_data_cfg(const scanDataCfg &cfg) const
 {
-  // TODO: clean up
-  char buf[128];
-  sprintf(buf, "%02X 00 %d %d 0 %02X 00 %d %d 0 %d +%d%c",
-          cfg.outputChannel, cfg.remission ? 1 : 0,
-          cfg.resolution, cfg.encoder, cfg.position ? 1 : 0,
-          cfg.deviceName ? 1 : 0, cfg.timestamp ? 1 : 0, cfg.outputInterval, 0x03);
-  return std::string(buf);
+  std::stringstream ss;
+  ss << build_scan_data_cfg_output_channel(cfg.outputChannel);
+  ss << " " << cfg.remission;
+  ss << " " << cfg.resolution;
+  ss << " 0"; // Resolution, always 0
+  ss << " " << build_scan_data_cfg_encoder(cfg.encoder);
+  ss << " " << cfg.position;
+  ss << " " << cfg.deviceName;
+  ss << " " << cfg.comment;
+  ss << " " << cfg.timestamp;
+  ss << " +" << cfg.outputInterval;
+  return ss.str();
+}
+
+std::string CoLaA::build_scan_data_cfg_output_channel(int ch) const
+{
+  std::stringstream ss;
+  ss << std::setw(2) << std::setfill('0') << ch << " 00";
+  return ss.str();
+}
+
+std::string CoLaA::build_scan_data_cfg_encoder(int enc) const
+{
+  if (enc)
+  {
+    std::stringstream ss;
+    ss << std::setw(2) << std::setfill('0') << enc << " 00";
+    return ss.str();
+  }
+  return "00 00"; // Data sheet says "No encoder: 0, but that produces an error"
 }
 
 void CoLaA::parse_scan_data(char *buffer, void *__data) const

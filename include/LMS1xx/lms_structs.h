@@ -41,6 +41,12 @@ struct scanCfg
   int scaningFrequency;
 
   /*!
+   * @brief number of active sensors
+   * 1 for LMS1xx and LMS5xx, 1-4 for NAV310, LD-OEM15xx, LD-LRS36xx
+   */
+  int activeSensors;
+
+  /*!
    * @brief Scanning resolution.
    * 1/10000 degree
    */
@@ -83,6 +89,8 @@ struct scanDataCfg
   /*!
    * @brief Remission resolution.
    * Defines whether the remission values are output with 8-bit or 16bit resolution.
+   * 8 bit: 0
+   * 16 bit: 1
    */
   int resolution;
 
@@ -103,6 +111,12 @@ struct scanDataCfg
    * Determines whether the device name is to be output.
    */
   bool deviceName;
+
+  /*!
+   * @brief Saved comment
+   * Determines whether the saved comment is to be output.
+   */
+  bool comment;
 
   bool timestamp;
 

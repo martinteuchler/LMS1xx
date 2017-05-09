@@ -207,14 +207,16 @@ protected:
   virtual scanCfg parse_scan_cfg(const char *buf, size_t len);
   virtual std::string build_scan_cfg(const scanCfg &cfg) const;
   virtual std::string build_scan_data_cfg(const scanDataCfg &cfg) const;
+  virtual std::string build_scan_data_cfg_output_channel(int ch) const;
+  virtual std::string build_scan_data_cfg_encoder(int enc) const;
   virtual void parse_scan_data(char *buffer, void *data) const;
 
-private:
   void send_command(const std::string &command) const;
   void send_command(const char *command) const;
   bool read_back(char *buf, size_t &buflen);
   bool read_back();
 
+private:
   bool connected_;
   LMSBuffer *buffer_;
   int socket_fd_;
