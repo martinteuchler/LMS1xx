@@ -55,9 +55,9 @@ int main(int argc, char **argv)
 
     ROS_INFO("Connected to laser.");
 
-    ROS_INFO("Laser configuration: scaningFrequency %d, activeSensors %d, angleResolution %d, startAngle %d, stopAngle %d",
+    ROS_DEBUG("Laser configuration: scaningFrequency %d, activeSensors %d, angleResolution %d, startAngle %d, stopAngle %d",
               cfg.scan_frequency, cfg.num_sectors, cfg.angualar_resolution, cfg.start_angle, cfg.stop_angle);
-    ROS_INFO("Laser output range:angleResolution %d, startAngle %d, stopAngle %d",
+    ROS_DEBUG("Laser output range:angleResolution %d, startAngle %d, stopAngle %d",
               output_range.angular_resolution, output_range.start_angle, output_range.stop_angle);
 
     scan_msg.header.frame_id = frame_id;
