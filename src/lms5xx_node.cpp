@@ -43,7 +43,7 @@ bool setup(LMS5xx &laser, sensor_msgs::LaserScan &scan_msg, sensor_msgs::MultiEc
   ROS_INFO("Connected to laser.");
 
   ROS_DEBUG("Laser configuration: scaningFrequency %d, activeSensors %d, angleResolution %d, startAngle %d, stopAngle %d",
-           cfg.scan_frequency, cfg.num_sectors, cfg.angualr_resolution, cfg.start_ange, cfg.stop_angle);
+           cfg.scan_frequency, cfg.num_sectors, cfg.angualar_resolution, cfg.start_angle, cfg.stop_angle);
   ROS_DEBUG("Laser output range: angleResolution %d, startAngle %d, stopAngle %d",
            output_range.angular_resolution, output_range.start_angle, output_range.stop_angle);
 

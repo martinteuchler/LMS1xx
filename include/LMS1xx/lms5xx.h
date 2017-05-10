@@ -6,9 +6,15 @@
 #include <LMS1xx/colaa.h>
 #include <LMS1xx/colaa_structs.h>
 
+/**
+ * @brief Specialises CoLaA base implementation for the LMS5xx series of scanners
+ */
 class LMS5xx : public CoLaA
 {
 public:
+  /**
+   * @brief Echo return configuration
+   */
   enum EchoFilter : uint8_t
   {
     FirstEcho = 0,
@@ -18,9 +24,18 @@ public:
 
   LMS5xx();
 
+  /**
+   * @brief Configures the echo return of the sensor
+   * @param filter Which echoes to return
+   */
   void set_echo_filter(EchoFilter filter);
 
 protected:
+  /**
+   * @brief Channel data is handled by set_echo_filter for this sensor
+   * @param ch
+   * @return
+   */
   std::string build_scan_data_cfg_output_channel(int ch) const;
   std::string SET_ECHO_FILTER_COMMAND;
 };

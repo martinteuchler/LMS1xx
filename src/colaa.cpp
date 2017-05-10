@@ -255,8 +255,8 @@ ScanConfig CoLaA::parse_scan_cfg(char *buf, size_t len)
   next_token(&buf); // Command name
   next_token(&buf, cfg.scan_frequency);
   next_token(&buf, cfg.num_sectors);
-  next_token(&buf, cfg.angualr_resolution);
-  next_token(&buf, cfg.start_ange);
+  next_token(&buf, cfg.angualar_resolution);
+  next_token(&buf, cfg.start_angle);
   next_token(&buf, cfg.stop_angle);
   return cfg;
 }
@@ -269,7 +269,7 @@ std::string CoLaA::build_scan_cfg(const ScanConfig &cfg) const
   }
   std::stringstream ss;
   ss << std::uppercase << std::hex << cfg.scan_frequency << " +" << std::dec << std::min(cfg.num_sectors, (int16_t)1) << " "
-     << std::hex << cfg.angualr_resolution << " " << cfg.start_ange << " " << cfg.stop_angle;
+     << std::hex << cfg.angualar_resolution << " " << cfg.start_angle << " " << cfg.stop_angle;
   logDebug("TX: %s", ss.str().c_str());
   return ss.str();
 }

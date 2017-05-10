@@ -9,6 +9,15 @@
 
 class LMSBuffer;
 
+/**
+ * @brief Abstraction for communication with SICK sensors that use
+ * CoLa A ASCII Telegram messages.
+ *
+ * This class implements the protocol for the LMS1xx series of sensors as a baseline.
+ *
+ * Inherit from this class to implement new sensors that require custom
+ * data formats.
+ */
 class CoLaA
 {
 public:
@@ -120,13 +129,14 @@ public:
 
   /*!
   * @brief Receive single scan message.
+  * @param scan_data will be passed to parse_scan_data which can be overwritten by subclasses
   * @return true if scan was read successfully, false if error or timeout. False implies that higher level
   *         logic should take correct action such as reopening the connection.
   */
-  // TODO: abstract scan_data
   bool get_scan_data(void *scan_data);
 
 protected:
+  // Command names
   std::string LOGIN_COMMAND;
   std::string LOGIN_USER_MAINT;
   std::string LOGIN_USER_AUTHORIZED;
@@ -150,21 +160,101 @@ protected:
 
   std::string START_DEVICE_COMMAND;
 
+  /**
+   * @brief Sends login command
+   * @param user_class pick one of LOGIN_USER_x
+   * @param password pick matching LOGIN_PASS_x
+   */
   void do_login(std::string user_class, std::string password);
 
+  /**
+   * @brief Produce ScanConfig struct from raw ASCII message buffer
+   * Can be overwritten by subclasses if customisation is needed.
+   * @param buf
+   * @param len
+   * @return The parsed struct
+   */
   virtual ScanConfig parse_scan_cfg(char *buf, size_t len);
+
+  /**
+   * @brief Build up the scan config string from a ScanConfig struct
+   * Can be overwritten by subclasses if customisation is needed.
+   * @param cfg
+   * @return message string
+   */
   virtual std::string build_scan_cfg(const ScanConfig &cfg) const;
+
+  /**
+   * @brief Build scan data config from struct
+   * Base implementation will call build_scan_data_cfg_output_channel to construct the
+   * output channel part of the message and build_scan_data_cfg_encoder to build the
+   * encoder part of the message.
+   * @param cfg
+   * @return the message string
+   */
   virtual std::string build_scan_data_cfg(const ScanDataConfig &cfg) const;
+
+  /**
+   * @brief Can be customised to implement special message formats for the output channel
+   * @param ch Channel number as passed by the ScanDataConfig struct
+   * @return output channel part of the message, should not contain leading/trailing spaces
+   */
   virtual std::string build_scan_data_cfg_output_channel(int ch) const;
+
+  /**
+   * @brief Can be customised to implement special message formats for the encoder
+   * @param enc Encoder setting as passed by the ScanDataConfig struct
+   * @return encoder part of the message, should not include leading/trailing spaces
+   */
   virtual std::string build_scan_data_cfg_encoder(int enc) const;
 
+  /**
+   * @brief Called by get_scan_data when the internal buffer is filled
+   * @param buffer the message to be parsed
+   * @param data Destination for the parsed data, pass a ScanData pointer for the base implementation
+   */
   virtual void parse_scan_data(char *buffer, void *data) const;
+
+  /**
+   * @brief Parses the header part of the scan data message and returns it as a struct
+   * @param buf the message data
+   * @return filled struct
+   */
   virtual ScanDataHeader parse_scan_data_header(char **buf) const;
+
+  /**
+   * @brief Parses the encoder part of the scan data message
+   * The data is currently discarded.
+   * @param buf the message data
+   */
   virtual void parse_scan_data_encoderdata(char **buf) const;
 
+  /**
+   * @brief Surrounds command with start and end markers and sends them to the scanner
+   * @param command The command string
+   */
   void send_command(const std::string &command) const;
+
+  /**
+   * @brief Surrounds command with start and end markers and sends them to the scanner
+   * @param command The command string
+   */
   void send_command(const char *command) const;
+
+  /**
+   * @brief Read data back from the socket
+   * Checks for malformed messages and parses error codes.
+   * @param buf Destination for the read data
+   * @param buflen Maximum size of the buffer. Will be set to new size of the buffer after the read.
+   * @return True if the read was successful and no errors occured.
+   */
   bool read_back(char *buf, size_t &buflen);
+
+  /**
+   * @brief Read data back from the socket and discard it
+   * Error checks are still performed.
+   * @return
+   */
   bool read_back();
 
 private:
@@ -173,6 +263,6 @@ private:
   int socket_fd_;
 };
 
-using LMS1xx = CoLaA; // The base implementation is for LMS1xxx
+using LMS1xx = CoLaA; // CoLaA implements the protocol based on the LMS1xx sensor
 
 #endif // COLAA_H
