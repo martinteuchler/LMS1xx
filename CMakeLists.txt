@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(lms1xx)
 
-# Enable warnings
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
-endif()
-
 add_compile_options(-std=c++11)
 
 # Build ROS-independent library.
@@ -26,7 +21,7 @@ target_link_libraries(MRS1000 CoLaA ${console_bridge_LIBRARIES})
 
 # Regular catkin package follows.
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs)
-catkin_package(CATKIN_DEPENDS roscpp)
+catkin_package(CATKIN_DEPENDS roscpp sensor_msgs)
 
 include_directories(include SYSTEM ${catkin_INCLUDE_DIRS})
 
