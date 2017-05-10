@@ -21,6 +21,9 @@ target_link_libraries(LMS1xx ${console_bridge_LIBRARIES})
 add_library(MRS1000 src/MRS1000.cpp)
 target_link_libraries(MRS1000 CoLaA ${console_bridge_LIBRARIES})
 
+add_library(LMS5xx src/lms5xx.cpp)
+target_link_libraries(LMS5xx CoLaA ${console_bridge_LIBRARIES})
+
 
 # Regular catkin package follows.
 find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs)
@@ -33,6 +36,10 @@ target_link_libraries(LMS1xx_node LMS1xx ${catkin_LIBRARIES})
 add_executable(MRS1000_node src/MRS1000_node.cpp)
 target_link_libraries(MRS1000_node MRS1000 ${catkin_LIBRARIES})
 add_dependencies(MRS1000_node MRS1000)
+
+add_executable(LMS5xx_node src/lms5xx_node.cpp)
+target_link_libraries(LMS5xx_node LMS5xx ${catkin_LIBRARIES})
+add_dependencies(LMS5xx_node LMS5xx)
 
 add_executable(TestNode src/testnode.cpp)
 target_link_libraries(TestNode CoLaA ${catkin_LIBRARIES})
