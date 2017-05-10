@@ -173,6 +173,6 @@ private:
   int socket_fd_;
 };
 
-using LMS1xxx = CoLaA; // The base implementation is for LMS1xxx
+using LMS1xx = CoLaA; // The base implementation is for LMS1xxx
 
 #endif // COLAA_H

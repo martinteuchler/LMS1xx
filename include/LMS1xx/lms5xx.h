@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 #include <string>
-#include "LMS1xx/colaa.h"
-#include "LMS1xx/colaa_structs.h"
+#include <LMS1xx/colaa.h>
+#include <LMS1xx/colaa_structs.h>
 
 class LMS5xx : public CoLaA
 {

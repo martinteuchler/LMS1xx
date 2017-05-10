@@ -1,4 +1,4 @@
-#include "../include/LMS1xx/lms5xx.h"
+#include "LMS1xx/lms5xx.h"
 #include <sstream>
 #include <iomanip>
 

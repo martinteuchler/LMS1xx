@@ -2,6 +2,7 @@
 #define COLAA_STRUCTS_H
 
 #include "LMS1xx/parse_helpers.h"
+#include <vector>
 
 namespace CoLaAStatus
 {
@@ -61,7 +62,7 @@ enum SopasError
  * If the message has two digits, it is assumed that buf has a size of at least 2.
  * @return The parsed error code or PARSE_ERROR if no error code could be parsed
  */
-SopasError parse_error(const char *buf, bool twodigits)
+static SopasError parse_error(const char *buf, bool twodigits)
 {
   if (!buf)
   {

@@ -11,7 +11,6 @@
 
 #include "LMS1xx/lms_buffer.h"
 #include "LMS1xx/parse_helpers.h"
-#include "LMS1xx/lms_structs.h"
 
 constexpr uint8_t STX = 0x02; //Start transmission marker
 constexpr uint8_t ETX = 0x03; //End transmission marker

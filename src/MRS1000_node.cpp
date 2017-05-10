@@ -21,7 +21,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
-#include "LMS1xx/lms_structs.h"
 
 #define DEG2RAD M_PI/180.0
 
