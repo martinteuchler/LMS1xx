@@ -12,7 +12,7 @@ public:
   enum EchoFilter : uint8_t
   {
     FirstEcho = 0,
-    AllEchos = 1,
+    AllEchoes = 1,
     LastEcho = 2
   };
 
