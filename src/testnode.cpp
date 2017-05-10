@@ -3,7 +3,6 @@
 #include <LMS1xx/colaa.h>
 #include "ros/ros.h"
 #include "sensor_msgs/LaserScan.h"
-#include "LMS1xx/lms_structs.h"
 
 #define DEG2RAD M_PI/180.0
 
@@ -96,6 +95,7 @@ int main(int argc, char **argv)
     dataCfg.position = false;
     dataCfg.device_name = false;
     dataCfg.comment = false;
+    dataCfg.timestamp = false;
     dataCfg.output_interval = 1;
 
     ROS_DEBUG("Setting scan data configuration.");
@@ -119,25 +119,6 @@ int main(int argc, char **argv)
       ros::Duration(1).sleep();
       continue;
     }
-    /*if (stat == ready_for_measurement)
-    {
-      ROS_DEBUG("Ready status achieved.");
-      break;
-    }
-
-      if (ros::Time::now() > ready_status_timeout)
-      {
-        ROS_WARN("Timed out waiting for ready status. Trying again.");
-        laser.disconnect();
-        continue;
-      }
-
-      if (!ros::ok())
-      {
-        laser.disconnect();
-        return 1;
-      }
-    }*/
 
     ROS_DEBUG("Starting device.");
     laser.start_device(); // Log out to properly re-enable system after config
@@ -152,20 +133,15 @@ int main(int argc, char **argv)
       scan_msg.header.stamp = start;
       ++scan_msg.header.seq;
 
-      scanData data;
+      ScanData data;
       ROS_DEBUG("Reading scan data.");
       if (laser.get_scan_data(&data))
       {
-        for (int i = 0; i < data.dist_len1; i++)
+        for (size_t k = 0; k < data.ch16bit[0].data.size(); ++k)
         {
-          scan_msg.ranges[i] = data.dist1[i] * 0.001;
+          scan_msg.ranges[k] = data.ch16bit[0].data[k] * 0.001;
+          scan_msg.intensities[k] = data.ch16bit[1].data[k];
         }
-
-        for (int i = 0; i < data.rssi_len1; i++)
-        {
-          scan_msg.intensities[i] = data.rssi1[i];
-        }
-
         ROS_DEBUG("Publishing scan data.");
         scan_pub.publish(scan_msg);
       }

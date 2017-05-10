@@ -320,63 +320,11 @@ void copy_vector(std::vector<uint8_t> &src, uint16_t *dest)
 
 void CoLaA::parse_scan_data(char *buffer, void *__data) const
 {
-  scanData *data = (scanData *)__data;
-  ScanDataHeader header = parse_scan_data_header(&buffer);
-  (void)header; // Unused
+  ScanData *data = (ScanData *)__data;
+  data->header = parse_scan_data_header(&buffer);
   parse_scan_data_encoderdata(&buffer);
-  std::vector<ChannelData<uint16_t> > channels_16bit = ChannelData<uint16_t>::parse_scan_data_channels(&buffer);
-  std::vector<ChannelData<uint8_t> > channels_8bit = ChannelData<uint8_t>::parse_scan_data_channels(&buffer);
-
-  // These seem to contain the dist values
-  for (size_t i = 0; i < channels_16bit.size(); ++i)
-  {
-    if (channels_16bit[i].header.contents == "DIST1")
-    {
-      data->dist_len1 = channels_16bit[i].header.data_count;
-      memcpy(data->dist1, channels_16bit[i].data.data(), channels_16bit[i].data.size() * sizeof(uint16_t));
-    }
-    else if (channels_16bit[i].header.contents == "DIST2")
-    {
-      data->dist_len2 = channels_16bit[i].header.data_count;
-      memcpy(data->dist2, channels_16bit[i].data.data(), channels_16bit[i].data.size() * sizeof(uint16_t));
-    }
-    else if (channels_16bit[i].header.contents == "RSSI1")
-    {
-      data->rssi_len1 = channels_16bit[i].header.data_count;
-      memcpy(data->rssi1, channels_16bit[i].data.data(), channels_16bit[i].data.size() * sizeof(uint16_t));
-    }
-    else if (channels_16bit[i].header.contents == "RSSI2")
-    {
-      data->rssi_len2 = channels_16bit[i].header.data_count;
-      memcpy(data->rssi2, channels_16bit[i].data.data(), channels_16bit[i].data.size() * sizeof(uint16_t));
-    }
-  }
-
-
-  // These seem to contain the RSSI values
-  for (size_t i = 0; i < channels_8bit.size(); ++i)
-  {
-    if (channels_8bit[i].header.contents == "DIST1")
-    {
-      data->dist_len1 = channels_8bit[i].header.data_count;
-      copy_vector(channels_8bit[i].data, data->dist1);
-    }
-    else if (channels_8bit[i].header.contents == "DIST2")
-    {
-      data->dist_len2 = channels_8bit[i].header.data_count;
-      copy_vector(channels_8bit[i].data, data->dist2);
-    }
-    else if (channels_8bit[i].header.contents == "RSSI1")
-    {
-      data->rssi_len1 = channels_8bit[i].header.data_count;
-      copy_vector(channels_8bit[i].data, data->rssi1);
-    }
-    else if (channels_8bit[i].header.contents == "RSSI2")
-    {
-      data->rssi_len2 = channels_8bit[i].header.data_count;
-      copy_vector(channels_8bit[i].data, data->rssi2);
-    }
-  }
+  data->ch16bit = ChannelData<uint16_t>::parse_scan_data_channels(&buffer);
+  data->ch8bit = ChannelData<uint8_t>::parse_scan_data_channels(&buffer);
 }
 
 ScanDataHeader CoLaA::parse_scan_data_header(char **buf) const

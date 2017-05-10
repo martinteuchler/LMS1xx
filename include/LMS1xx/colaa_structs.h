@@ -256,4 +256,12 @@ public:
   }
 };
 
+struct ScanData
+{
+  ScanDataHeader header;
+  std::vector<ChannelData<uint16_t>> ch16bit;
+  std::vector<ChannelData<uint8_t>> ch8bit;
+};
+
+
 #endif // COLAA_STRUCTS_H
