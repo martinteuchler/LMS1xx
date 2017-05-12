@@ -40,7 +40,7 @@ public:
   * @brief Get status of connection.
   * @returns connected or not.
   */
-  bool is_connected() const;
+  bool isConnected() const;
 
   /*!
   * @brief Log into device
@@ -52,37 +52,37 @@ public:
   * @brief The device is returned to the measurement mode after configuration.
   *
   */
-  void start_device();
+  void startDevice();
 
   /*!
   * @brief Start measurements.
   * After receiving this command the unit starts spinning laser and measuring.
   */
-  void start_measurement();
+  void startMeasurement();
 
   /*!
   * @brief Stop measurements.
   * After receiving this command LMS1xx unit stop spinning laser and measuring.
   */
-  void stop_measurement();
+  void stopMeasurement();
 
   /*!
   * @brief Set scan configuration.
-  * Get scan configuration :
+  * Set scan configuration :
   * - scanning frequency.
   * - scanning resolution.
   * - start angle.
   * - stop angle.
   * @param cfg structure containing scan configuration.
   */
-  void set_scan_config(const ScanConfig &cfg);
+  void setScanConfig(const ScanConfig &cfg);
 
   /*!
   * @brief Set scan data configuration.
   * Set format of scan message returned by device.
   * @param cfg structure containing scan data configuration.
   */
-  void set_scan_data_config(const ScanDataConfig &cfg);
+  void setScanDataConfig(const ScanDataConfig &cfg);
 
   /*!
   * @brief Get current scan configuration.
@@ -93,21 +93,21 @@ public:
   * - stop angle.
   * @returns scanCfg structure.
   */
-  ScanConfig get_scan_config();
+  ScanConfig getScanConfig();
 
   /*!
   * @brief Save data permanently.
   * Parameters are saved in the EEPROM of the LMS and will also be available after the device is switched off and on again.
   *
   */
-  void save_config();
+  void saveConfig();
 
   /*!
   * @brief Get current status of device.
   * This should be the same for all sensor types
   * @returns status of device.
   */
-  CoLaAStatus::Status query_status();
+  CoLaAStatus::Status queryStatus();
 
   /*!
   * @brief Get current output range configuration.
@@ -118,14 +118,14 @@ public:
   * Should be the same for all sensor types
   * @returns scanOutputRange structure.
   */
-  ScanOutputRange get_scan_output_range();
+  ScanOutputRange getScanOutputRange();
 
   /*!
   * @brief Start or stop continuous data acquisition.
   * After reception of this command device start or stop continuous data stream containing scan messages.
   * @param start true : start false : stop
   */
-  void scan_continuous(bool start);
+  void scanContinuous(bool start);
 
   /*!
   * @brief Receive single scan message.
@@ -133,7 +133,7 @@ public:
   * @return true if scan was read successfully, false if error or timeout. False implies that higher level
   *         logic should take correct action such as reopening the connection.
   */
-  bool get_scan_data(void *scan_data);
+  bool getScanData(void *scan_data);
 
 protected:
   // Command names
@@ -165,7 +165,7 @@ protected:
    * @param user_class pick one of LOGIN_USER_x
    * @param password pick matching LOGIN_PASS_x
    */
-  void do_login(std::string user_class, std::string password);
+  void doLogin(std::string user_class, std::string password);
 
   /**
    * @brief Produce ScanConfig struct from raw ASCII message buffer
@@ -174,7 +174,7 @@ protected:
    * @param len
    * @return The parsed struct
    */
-  virtual ScanConfig parse_scan_cfg(char *buf, size_t len);
+  virtual ScanConfig parseScanCfg(char *buf, size_t len);
 
   /**
    * @brief Build up the scan config string from a ScanConfig struct
@@ -182,7 +182,7 @@ protected:
    * @param cfg
    * @return message string
    */
-  virtual std::string build_scan_cfg(const ScanConfig &cfg) const;
+  virtual std::string buildScanCfg(const ScanConfig &cfg) const;
 
   /**
    * @brief Build scan data config from struct
@@ -192,54 +192,54 @@ protected:
    * @param cfg
    * @return the message string
    */
-  virtual std::string build_scan_data_cfg(const ScanDataConfig &cfg) const;
+  virtual std::string buildScanDataCfg(const ScanDataConfig &cfg) const;
 
   /**
    * @brief Can be customised to implement special message formats for the output channel
    * @param ch Channel number as passed by the ScanDataConfig struct
    * @return output channel part of the message, should not contain leading/trailing spaces
    */
-  virtual std::string build_scan_data_cfg_output_channel(int ch) const;
+  virtual std::string buildScanDataCfgOutputChannel(int ch) const;
 
   /**
    * @brief Can be customised to implement special message formats for the encoder
    * @param enc Encoder setting as passed by the ScanDataConfig struct
    * @return encoder part of the message, should not include leading/trailing spaces
    */
-  virtual std::string build_scan_data_cfg_encoder(int enc) const;
+  virtual std::string buildScanDataCfgEncoder(int enc) const;
 
   /**
    * @brief Called by get_scan_data when the internal buffer is filled
    * @param buffer the message to be parsed
    * @param data Destination for the parsed data, pass a ScanData pointer for the base implementation
    */
-  virtual void parse_scan_data(char *buffer, void *data) const;
+  virtual void parseScanData(char *buffer, void *data) const;
 
   /**
    * @brief Parses the header part of the scan data message and returns it as a struct
    * @param buf the message data
    * @return filled struct
    */
-  virtual ScanDataHeader parse_scan_data_header(char **buf) const;
+  virtual ScanDataHeader parseScanDataHeader(char **buf) const;
 
   /**
    * @brief Parses the encoder part of the scan data message
    * The data is currently discarded.
    * @param buf the message data
    */
-  virtual void parse_scan_data_encoderdata(char **buf) const;
+  virtual void parseScanDataEncoderdata(char **buf) const;
 
   /**
    * @brief Surrounds command with start and end markers and sends them to the scanner
    * @param command The command string
    */
-  void send_command(const std::string &command) const;
+  void sendCommand(const std::string &command) const;
 
   /**
    * @brief Surrounds command with start and end markers and sends them to the scanner
    * @param command The command string
    */
-  void send_command(const char *command) const;
+  void sendCommand(const char *command) const;
 
   /**
    * @brief Read data back from the socket
@@ -248,14 +248,14 @@ protected:
    * @param buflen Maximum size of the buffer. Will be set to new size of the buffer after the read.
    * @return True if the read was successful and no errors occured.
    */
-  bool read_back(char *buf, size_t &buflen);
+  bool readBack(char *buf, size_t &buflen);
 
   /**
    * @brief Read data back from the socket and discard it
    * Error checks are still performed.
    * @return
    */
-  bool read_back();
+  bool readBack();
 
 private:
   bool connected_;

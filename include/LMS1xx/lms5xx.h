@@ -28,7 +28,7 @@ public:
    * @brief Configures the echo return of the sensor
    * @param filter Which echoes to return
    */
-  void set_echo_filter(EchoFilter filter);
+  void setEchoFilter(EchoFilter filter);
 
 protected:
   /**
@@ -36,7 +36,7 @@ protected:
    * @param ch
    * @return
    */
-  std::string build_scan_data_cfg_output_channel(int ch) const;
+  std::string buildScanDataCfgOutputChannel(int ch) const;
   std::string SET_ECHO_FILTER_COMMAND;
 };
 

@@ -56,7 +56,7 @@ int main(int argc, char **argv)
   {
     ROS_INFO_STREAM("Connecting to laser at " << host);
     laser.connect(host, port);
-    if (!laser.is_connected())
+    if (!laser.isConnected())
     {
       ROS_WARN("Unable to connect, retrying.");
       ros::Duration(1).sleep();
@@ -65,8 +65,8 @@ int main(int argc, char **argv)
 
     ROS_DEBUG("Logging in to laser.");
     laser.login();
-    cfg = laser.get_scan_config();
-    output_range = laser.get_scan_output_range();
+    cfg = laser.getScanConfig();
+    output_range = laser.getScanOutputRange();
 
     if (cfg.scan_frequency != 5000)
     {
@@ -122,17 +122,17 @@ int main(int argc, char **argv)
     dataCfg.output_interval = 1;
 
     ROS_DEBUG("Setting scan data configuration.");
-    laser.set_scan_data_config(dataCfg);
+    laser.setScanDataConfig(dataCfg);
 
     ROS_DEBUG("Starting measurements.");
-    laser.start_measurement();
+    laser.startMeasurement();
 
     ROS_DEBUG("Waiting for ready status.");
     ros::Time ready_status_timeout = ros::Time::now() + ros::Duration(5);
 
     //while(1)
     //{
-    CoLaAStatus::Status stat = laser.query_status();
+    CoLaAStatus::Status stat = laser.queryStatus();
     ros::Duration(1.0).sleep();
     if (stat != CoLaAStatus::ReadyForMeasurement)
     {
@@ -143,10 +143,10 @@ int main(int argc, char **argv)
     }
 
     ROS_DEBUG("Starting device.");
-    laser.start_device(); // Log out to properly re-enable system after config
+    laser.startDevice(); // Log out to properly re-enable system after config
 
     ROS_DEBUG("Commanding continuous measurements.");
-    laser.scan_continuous(true);
+    laser.scanContinuous(true);
 
     while (ros::ok())
     {
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 
       ScanData data;
       ROS_DEBUG("Reading scan data.");
-      if (laser.get_scan_data(&data))
+      if (laser.getScanData(&data))
       {
         for (size_t k = 0; k < data.ch16bit[0].data.size(); ++k)
         {
@@ -176,8 +176,8 @@ int main(int argc, char **argv)
       ros::spinOnce();
     }
 
-    laser.scan_continuous(false);
-    laser.stop_measurement();
+    laser.scanContinuous(false);
+    laser.stopMeasurement();
     laser.disconnect();
   }
 

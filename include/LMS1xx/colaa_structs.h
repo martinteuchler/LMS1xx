@@ -38,7 +38,7 @@ enum SopasError
   Sopas_Error_VARIABLE_UNKNONWINDEX = 3,
   Sopas_Error_LOCALCONDITIONFAILED = 4,
   Sopas_Error_INVALID_DATA = 5,
-  Sopas_Error_UNKNOWN_Error = 6,
+  Sopas_Error_UNKNOWN_ERROR = 6,
   Sopas_Error_BUFFER_OVERFLOW = 7,
   Sopas_Error_BUFFER_UNDERFLOW = 8,
   Sopas_Error_ERROR_UNKNOWN_TYPE = 9,
@@ -70,7 +70,7 @@ enum SopasError
  * If the message has two digits, it is assumed that buf has a size of at least 2.
  * @return The parsed error code or PARSE_ERROR if no error code could be parsed
  */
-static SopasError parse_error(const char *buf, bool twodigits)
+static SopasError parseError(const char *buf, bool twodigits)
 {
   if (!buf)
   {
@@ -363,15 +363,15 @@ public:
    * @param buf the data stream
    * @return the parsed header
    */
-  static ChannelDataHeader parse_scan_data_channel_header(char **buf)
+  static ChannelDataHeader parseScanDataChannelHeader(char **buf)
   {
     ChannelDataHeader header;
-    next_token(buf, header.contents);
-    next_token(buf, header.scale_factor);
-    next_token(buf, header.scale_factor_offset);
-    next_token(buf, header.start_angle);
-    next_token(buf, header.step_size);
-    next_token(buf, header.data_count);
+    nextToken(buf, header.contents);
+    nextToken(buf, header.scale_factor);
+    nextToken(buf, header.scale_factor_offset);
+    nextToken(buf, header.start_angle);
+    nextToken(buf, header.step_size);
+    nextToken(buf, header.data_count);
     return header;
   }
 
@@ -380,20 +380,20 @@ public:
    * @param buf data stream
    * @return A vector containing all extracted data channels in this section
    */
-  static std::vector<ChannelData<T> > parse_scan_data_channels(char **buf)
+  static std::vector<ChannelData<T> > parseScanDataChannels(char **buf)
   {
     std::vector<ChannelData<T> > channels;
     uint16_t num_channels = 0;
-    next_token(buf, num_channels);
+    nextToken(buf, num_channels);
     for (uint16_t channel = 0; channel < num_channels; ++channel)
     {
       ChannelData<T> chan;
-      chan.header = parse_scan_data_channel_header(buf);
+      chan.header = parseScanDataChannelHeader(buf);
       chan.data.resize(chan.header.data_count);
       T data_n;
       for (uint16_t d = 0; d < chan.header.data_count; ++d)
       {
-        next_token(buf, data_n);
+        nextToken(buf, data_n);
         chan.data[d] = data_n;
       }
       channels.push_back(chan);

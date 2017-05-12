@@ -11,13 +11,13 @@
  * @param buf pointer to the input buffer
  * @param val value to extract into
  */
-void next_token(char **buf, uint8_t &val);
-void next_token(char **buf, uint16_t &val);
-void next_token(char **buf, uint32_t &val);
-void next_token(char **buf, int32_t &val);
-void next_token(char **buf, int16_t &val);
-void next_token(char **buf, float &val);
-void next_token(char **buf, std::string &val);
-void next_token(char **buf);
+void nextToken(char **buf, uint8_t &val);
+void nextToken(char **buf, uint16_t &val);
+void nextToken(char **buf, uint32_t &val);
+void nextToken(char **buf, int32_t &val);
+void nextToken(char **buf, int16_t &val);
+void nextToken(char **buf, float &val);
+void nextToken(char **buf, std::string &val);
+void nextToken(char **buf);
 
 #endif // PARSE_HELPERS_H

@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   {
     ROS_INFO_STREAM("Connecting to laser at " << host);
     laser.connect(host, port);
-    if (!laser.is_connected())
+    if (!laser.isConnected())
     {
       ROS_WARN("Unable to connect, retrying.");
       ros::Duration(1).sleep();
@@ -150,10 +150,10 @@ int main(int argc, char **argv)
     }*/
 
     ROS_DEBUG("Starting device.");
-    laser.start_device(); // Log out to properly re-enable system after config
+    laser.startDevice(); // Log out to properly re-enable system after config
 
     ROS_DEBUG("Commanding continuous measurements.");
-    laser.scan_continuous(true);
+    laser.scanContinuous(true);
 
     double start_angle = -275.0/2.0*DEG2RAD;
     double angle_inc = 0.25*DEG2RAD;
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
       scanDataLayerMRS data;
       ROS_DEBUG("Reading scan data.");
 
-      if (laser.get_scan_data(&data))
+      if (laser.getScanData(&data))
       {
 
 	// reset iterators and layer counter when receiving the first one, so we collect all layers in one cloud
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
       ros::spinOnce();
     }
 
-    laser.scan_continuous(false);
+    laser.scanContinuous(false);
     /*
     laser.stopMeas();
     */

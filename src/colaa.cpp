@@ -82,7 +82,7 @@ void CoLaA::disconnect()
   }
 }
 
-bool CoLaA::is_connected() const
+bool CoLaA::isConnected() const
 {
   return connected_;
 }
@@ -98,7 +98,7 @@ void CoLaA::login()
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
-    do_login(LOGIN_USER_AUTHORIZED, LOGIN_PASS_AUTHORIZED);
+    doLogin(LOGIN_USER_AUTHORIZED, LOGIN_PASS_AUTHORIZED);
 
     FD_ZERO(&readset);
     FD_SET(socket_fd_, &readset);
@@ -107,67 +107,67 @@ void CoLaA::login()
   }
   while (result <= 0);
 
-  read_back();
+  readBack();
 }
 
-void CoLaA::start_device()
+void CoLaA::startDevice()
 {
-  send_command(START_DEVICE_COMMAND);
-  read_back();
+  sendCommand(START_DEVICE_COMMAND);
+  readBack();
 }
 
-void CoLaA::start_measurement()
+void CoLaA::startMeasurement()
 {
-  send_command(START_MEASUREMENT_COMMAND);
-  read_back();
+  sendCommand(START_MEASUREMENT_COMMAND);
+  readBack();
 }
 
-void CoLaA::stop_measurement()
+void CoLaA::stopMeasurement()
 {
-  send_command(STOP_MEASUREMENT_COMMAND);
-  read_back();
+  sendCommand(STOP_MEASUREMENT_COMMAND);
+  readBack();
 }
 
-void CoLaA::set_scan_config(const ScanConfig &cfg)
+void CoLaA::setScanConfig(const ScanConfig &cfg)
 {
-  std::string command = SET_SCAN_CFG_COMMAND + " " + build_scan_cfg(cfg);
-  send_command(command);
+  std::string command = SET_SCAN_CFG_COMMAND + " " + buildScanCfg(cfg);
+  sendCommand(command);
 
-  read_back();
+  readBack();
 }
 
-void CoLaA::set_scan_data_config(const ScanDataConfig &cfg)
+void CoLaA::setScanDataConfig(const ScanDataConfig &cfg)
 {
-  std::string command = SET_SCAN_DATA_CFG_COMMAND + " " + build_scan_data_cfg(cfg);
-  send_command(command);
+  std::string command = SET_SCAN_DATA_CFG_COMMAND + " " + buildScanDataCfg(cfg);
+  sendCommand(command);
 
-  read_back();
+  readBack();
 }
 
-ScanConfig CoLaA::get_scan_config()
+ScanConfig CoLaA::getScanConfig()
 {
-  send_command(READ_SCAN_CFG_COMMAND);
+  sendCommand(READ_SCAN_CFG_COMMAND);
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
-  read_back(buf, len);
+  readBack(buf, len);
 
-  return parse_scan_cfg(buf, len);
+  return parseScanCfg(buf, len);
 }
 
-void CoLaA::save_config()
+void CoLaA::saveConfig()
 {
-  send_command(SAVE_CONFIG_COMMAND);
-  read_back();
+  sendCommand(SAVE_CONFIG_COMMAND);
+  readBack();
 }
 
-CoLaAStatus::Status CoLaA::query_status()
+CoLaAStatus::Status CoLaA::queryStatus()
 {
-  send_command(QUERY_STATUS_COMMAND);
+  sendCommand(QUERY_STATUS_COMMAND);
 
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
   CoLaAStatus::Status status = CoLaAStatus::Error;
-  if (read_back(buf, len) && len > 10)
+  if (readBack(buf, len) && len > 10)
   {
     int ret;
     sscanf((buf + 10), "%d", &ret);
@@ -176,32 +176,32 @@ CoLaAStatus::Status CoLaA::query_status()
   return status;
 }
 
-ScanOutputRange CoLaA::get_scan_output_range()
+ScanOutputRange CoLaA::getScanOutputRange()
 {
-  send_command(READ_SCAN_OUTPUT_RANGE_COMMAND);
+  sendCommand(READ_SCAN_OUTPUT_RANGE_COMMAND);
 
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
-  read_back(buf, len);
+  readBack(buf, len);
   char *parsable = &buf[0];
   ScanOutputRange range;
-  next_token(&parsable); // command type
-  next_token(&parsable); // command name
-  next_token(&parsable, range.num_sectors);
-  next_token(&parsable, range.angular_resolution);
-  next_token(&parsable, range.start_angle);
-  next_token(&parsable, range.stop_angle);
+  nextToken(&parsable); // command type
+  nextToken(&parsable); // command name
+  nextToken(&parsable, range.num_sectors);
+  nextToken(&parsable, range.angular_resolution);
+  nextToken(&parsable, range.start_angle);
+  nextToken(&parsable, range.stop_angle);
   return range;
 }
 
-void CoLaA::scan_continuous(bool start)
+void CoLaA::scanContinuous(bool start)
 {
   std::string command = START_CONT_COMMAND + " " + std::to_string(static_cast<int>(start));
-  send_command(command);
-  read_back();
+  sendCommand(command);
+  readBack();
 }
 
-bool CoLaA::get_scan_data(void *scan_data)
+bool CoLaA::getScanData(void *scan_data)
 {
   fd_set rfds;
   FD_ZERO(&rfds);
@@ -229,7 +229,7 @@ bool CoLaA::get_scan_data(void *scan_data)
 
       if (buffer_data)
       {
-        parse_scan_data(buffer_data, scan_data);
+        parseScanData(buffer_data, scan_data);
         buffer_->popLastBuffer();
         return true;
       }
@@ -242,26 +242,26 @@ bool CoLaA::get_scan_data(void *scan_data)
   }
 }
 
-void CoLaA::do_login(std::string user_class, std::string password)
+void CoLaA::doLogin(std::string user_class, std::string password)
 {
    std::string command = LOGIN_COMMAND + " " + user_class + " " + password;
-   send_command(command);
+   sendCommand(command);
 }
 
-ScanConfig CoLaA::parse_scan_cfg(char *buf, size_t len)
+ScanConfig CoLaA::parseScanCfg(char *buf, size_t len)
 {
   ScanConfig cfg;
-  next_token(&buf); // Command type
-  next_token(&buf); // Command name
-  next_token(&buf, cfg.scan_frequency);
-  next_token(&buf, cfg.num_sectors);
-  next_token(&buf, cfg.angualar_resolution);
-  next_token(&buf, cfg.start_angle);
-  next_token(&buf, cfg.stop_angle);
+  nextToken(&buf); // Command type
+  nextToken(&buf); // Command name
+  nextToken(&buf, cfg.scan_frequency);
+  nextToken(&buf, cfg.num_sectors);
+  nextToken(&buf, cfg.angualar_resolution);
+  nextToken(&buf, cfg.start_angle);
+  nextToken(&buf, cfg.stop_angle);
   return cfg;
 }
 
-std::string CoLaA::build_scan_cfg(const ScanConfig &cfg) const
+std::string CoLaA::buildScanCfg(const ScanConfig &cfg) const
 {
   if (cfg.num_sectors > 1)
   {
@@ -274,14 +274,14 @@ std::string CoLaA::build_scan_cfg(const ScanConfig &cfg) const
   return ss.str();
 }
 
-std::string CoLaA::build_scan_data_cfg(const ScanDataConfig &cfg) const
+std::string CoLaA::buildScanDataCfg(const ScanDataConfig &cfg) const
 {
   std::stringstream ss;
-  ss << build_scan_data_cfg_output_channel(cfg.output_channel);
+  ss << buildScanDataCfgOutputChannel(cfg.output_channel);
   ss << " " << cfg.remission;
   ss << " " << cfg.resolution;
   ss << " 0"; // Resolution, always 0
-  ss << " " << build_scan_data_cfg_encoder(cfg.encoder);
+  ss << " " << buildScanDataCfgEncoder(cfg.encoder);
   ss << " " << cfg.position;
   ss << " " << cfg.device_name;
   ss << " " << cfg.comment;
@@ -290,14 +290,14 @@ std::string CoLaA::build_scan_data_cfg(const ScanDataConfig &cfg) const
   return ss.str();
 }
 
-std::string CoLaA::build_scan_data_cfg_output_channel(int ch) const
+std::string CoLaA::buildScanDataCfgOutputChannel(int ch) const
 {
   std::stringstream ss;
   ss << std::setw(2) << std::setfill('0') << ch << " 00";
   return ss.str();
 }
 
-std::string CoLaA::build_scan_data_cfg_encoder(int enc) const
+std::string CoLaA::buildScanDataCfgEncoder(int enc) const
 {
   if (enc)
   {
@@ -308,64 +308,64 @@ std::string CoLaA::build_scan_data_cfg_encoder(int enc) const
   return "00 00"; // Data sheet says "No encoder: 0, but that produces an error"
 }
 
-void CoLaA::parse_scan_data(char *buffer, void *__data) const
+void CoLaA::parseScanData(char *buffer, void *__data) const
 {
   ScanData *data = (ScanData *)__data;
-  data->header = parse_scan_data_header(&buffer);
-  parse_scan_data_encoderdata(&buffer);
-  data->ch16bit = ChannelData<uint16_t>::parse_scan_data_channels(&buffer);
-  data->ch8bit = ChannelData<uint8_t>::parse_scan_data_channels(&buffer);
+  data->header = parseScanDataHeader(&buffer);
+  parseScanDataEncoderdata(&buffer);
+  data->ch16bit = ChannelData<uint16_t>::parseScanDataChannels(&buffer);
+  data->ch8bit = ChannelData<uint8_t>::parseScanDataChannels(&buffer);
 }
 
-ScanDataHeader CoLaA::parse_scan_data_header(char **buf) const
+ScanDataHeader CoLaA::parseScanDataHeader(char **buf) const
 {
   ScanDataHeader header;
-  next_token(buf); // Command Type, either sRN or sNA
-  next_token(buf); // Command: LMDscandata
+  nextToken(buf); // Command Type, either sRN or sNA
+  nextToken(buf); // Command: LMDscandata
 
-  next_token(buf, header.version_number);
+  nextToken(buf, header.version_number);
 
-  next_token(buf, header.device.device_number);
-  next_token(buf, header.device.serial_number);
-  next_token(buf, header.device.device_status_1);
-  next_token(buf, header.device.device_status_2);
+  nextToken(buf, header.device.device_number);
+  nextToken(buf, header.device.serial_number);
+  nextToken(buf, header.device.device_status_1);
+  nextToken(buf, header.device.device_status_2);
 
-  next_token(buf, header.status_info.telegram_counter);
-  next_token(buf, header.status_info.scan_counter);
-  next_token(buf, header.status_info.time_since_startup);
-  next_token(buf, header.status_info.time_of_transmission);
-  next_token(buf, header.status_info.status_digitalin_1);
-  next_token(buf, header.status_info.status_digitalin_2);
-  next_token(buf, header.status_info.status_digitalout_1);
-  next_token(buf, header.status_info.status_digitalout_2);
-  next_token(buf, header.status_info.reserved);
+  nextToken(buf, header.status_info.telegram_counter);
+  nextToken(buf, header.status_info.scan_counter);
+  nextToken(buf, header.status_info.time_since_startup);
+  nextToken(buf, header.status_info.time_of_transmission);
+  nextToken(buf, header.status_info.status_digitalin_1);
+  nextToken(buf, header.status_info.status_digitalin_2);
+  nextToken(buf, header.status_info.status_digitalout_1);
+  nextToken(buf, header.status_info.status_digitalout_2);
+  nextToken(buf, header.status_info.reserved);
 
-  next_token(buf, header.frequencies.scan_frequency);
-  next_token(buf, header.frequencies.measurement_frequency);
+  nextToken(buf, header.frequencies.scan_frequency);
+  nextToken(buf, header.frequencies.measurement_frequency);
   // Extracted 18 fields
   return header;
 }
 
-void CoLaA::parse_scan_data_encoderdata(char **buf) const
+void CoLaA::parseScanDataEncoderdata(char **buf) const
 {
    uint16_t num_encoders = 0;
-   next_token(buf, num_encoders);
+   nextToken(buf, num_encoders);
    logDebug("Got %ud encoders", num_encoders);
    for (uint16_t i = 0; i < num_encoders; ++ i)
    {
      uint32_t encoder_position = 0;
      uint16_t encoder_speed = 0;
-     next_token(buf, encoder_position);
-     next_token(buf, encoder_speed);
+     nextToken(buf, encoder_position);
+     nextToken(buf, encoder_speed);
    }
 }
 
-void CoLaA::send_command(const std::string &command) const
+void CoLaA::sendCommand(const std::string &command) const
 {
-  send_command(command.c_str());
+  sendCommand(command.c_str());
 }
 
-void CoLaA::send_command(const char *command) const
+void CoLaA::sendCommand(const char *command) const
 {
   ssize_t written = write(socket_fd_, &STX, 1);
   if (written != 1)
@@ -378,7 +378,7 @@ void CoLaA::send_command(const char *command) const
     logWarn("Error");
 }
 
-bool CoLaA::read_back(char *buf, size_t &buflen)
+bool CoLaA::readBack(char *buf, size_t &buflen)
 {
   if (!buf) {
     logDebug("No buffer supplied");
@@ -389,7 +389,7 @@ bool CoLaA::read_back(char *buf, size_t &buflen)
   if ((len == 7 || len == 8) && strncmp(&buf[1], "sFA ", 4) == 0)
   {
     // This is an error message
-    CoLaASopasError::SopasError err = CoLaASopasError::parse_error(&buf[5], len == 8);
+    CoLaASopasError::SopasError err = CoLaASopasError::parseError(&buf[5], len == 8);
     logWarn("Received error code %d", err);
   }
   if (!success)
@@ -403,9 +403,9 @@ bool CoLaA::read_back(char *buf, size_t &buflen)
   return success;
 }
 
-bool CoLaA::read_back()
+bool CoLaA::readBack()
 {
   char buf[DEF_BUF_LEN];
   size_t len = (sizeof buf);
-  return read_back(buf, len);
+  return readBack(buf, len);
 }
