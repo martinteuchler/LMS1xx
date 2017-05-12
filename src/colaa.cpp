@@ -308,15 +308,6 @@ std::string CoLaA::build_scan_data_cfg_encoder(int enc) const
   return "00 00"; // Data sheet says "No encoder: 0, but that produces an error"
 }
 
-// Dangerous hack!
-void copy_vector(std::vector<uint8_t> &src, uint16_t *dest)
-{
-  for (size_t i = 0; i < src.size(); ++i)
-  {
-    dest[i] = src[i];
-  }
-}
-
 void CoLaA::parse_scan_data(char *buffer, void *__data) const
 {
   ScanData *data = (ScanData *)__data;
