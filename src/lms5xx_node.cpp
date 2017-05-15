@@ -18,10 +18,11 @@ void usage()
   std::cout << "    port      The port to connect on" << std::endl;
   std::cout << "    frame_id  Frame id of the laser, defaults to \"laser\"." << std::endl;
   std::cout << "    echoes    One of \"first\", \"last\" or \"all\"." << std::endl;
+  std::cout << "    range     Maximum sensor range in m (default 80)" << std::endl;
 }
 
 bool setup(LMS5xx &laser, sensor_msgs::LaserScan &scan_msg, sensor_msgs::MultiEchoLaserScan &multi_scan_msg,
-           const LMS5xx::EchoFilter echo_mode)
+           const LMS5xx::EchoFilter echo_mode, double max_range)
 {
   ScanConfig cfg;
   ScanOutputRange output_range;
@@ -48,14 +49,14 @@ bool setup(LMS5xx &laser, sensor_msgs::LaserScan &scan_msg, sensor_msgs::MultiEc
            output_range.angular_resolution, output_range.start_angle, output_range.stop_angle);
 
   scan_msg.range_min = 0.01;
-  scan_msg.range_max = 20.0; // TODO: value?
+  scan_msg.range_max = max_range;
   scan_msg.scan_time = 100.0 / cfg.scan_frequency;
   scan_msg.angle_increment = (double)output_range.angular_resolution / 10000.0 * DEG2RAD;
   scan_msg.angle_min = (double)output_range.start_angle / 10000.0 * DEG2RAD - M_PI / 2;
   scan_msg.angle_max = (double)output_range.stop_angle / 10000.0 * DEG2RAD - M_PI / 2;
 
   multi_scan_msg.range_min = 0.01;
-  multi_scan_msg.range_max = 20.0; // TODO: value?
+  multi_scan_msg.range_max = max_range;
   multi_scan_msg.scan_time = 100.0 / cfg.scan_frequency;
   multi_scan_msg.angle_increment = (double)output_range.angular_resolution / 10000.0 * DEG2RAD;
   multi_scan_msg.angle_min = (double)output_range.start_angle / 10000.0 * DEG2RAD - M_PI / 2;
@@ -138,6 +139,7 @@ int main(int argc, char **argv)
   int port;
   std::string echoes;
   LMS5xx::EchoFilter echo_mode = LMS5xx::EchoFilter::AllEchoes;
+  double max_range = 80;
 
   ros::init(argc, argv, "lms5xx");
   ros::NodeHandle nh;
@@ -149,6 +151,7 @@ int main(int argc, char **argv)
   n.param<std::string>("frame_id", frame_id, "laser");
   n.param<int>("port", port, 2111);
   n.param<std::string>("echoes", echoes, "all");
+  n.param<double>("range", max_range, 80);
 
   if (echoes == std::string("first"))
   {
@@ -169,6 +172,12 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  if (max_range <= 0)
+  {
+    ROS_ERROR_STREAM("Range must be positive!");
+    return 1;
+  }
+
   scan_msg.header.frame_id = frame_id;
   multi_scan_msg.header.frame_id = frame_id;
 
@@ -183,7 +192,7 @@ int main(int argc, char **argv)
       continue;
     }
 
-    if (!setup(laser, scan_msg, multi_scan_msg, echo_mode))
+    if (!setup(laser, scan_msg, multi_scan_msg, echo_mode, max_range))
     {
       continue;
     }
@@ -221,6 +230,7 @@ int main(int argc, char **argv)
       ROS_DEBUG("Reading scan data.");
       if (laser.getScanData(&data))
       {
+        assert(data.ch16bit[0].data.size() == scan_msg.ranges.size());
         // Configured echo or first echo if "all" is selected
         for (size_t k = 0; k < data.ch16bit[0].data.size(); ++k)
         {
