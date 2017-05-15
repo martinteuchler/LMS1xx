@@ -189,6 +189,12 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  if (host.empty() || port < 0 || port > 65535)
+  {
+    ROS_ERROR_STREAM("Invalid connection configuration: host \"" << host << "\" port \"" << port << "\"!");
+    return 1;
+  }
+
   if (max_range <= 0)
   {
     ROS_ERROR_STREAM("Range must be positive!");
