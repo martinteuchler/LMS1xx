@@ -22,7 +22,8 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/MultiEchoLaserScan.h>
 
-#define DEG2RAD M_PI/180.0
+constexpr double DEG2RAD = M_PI/180.0;
+constexpr size_t ALL_ECHOES_COUNT = 5;
 
 void usage()
 {
@@ -92,9 +93,10 @@ bool setup(LMS5xx &laser, sensor_msgs::LaserScan &scan_msg, sensor_msgs::MultiEc
   scan_msg.ranges.resize(num_values);
   scan_msg.intensities.resize(num_values);
 
-  multi_scan_msg.ranges.resize(5);
-  multi_scan_msg.intensities.resize(5);
-  for (size_t i = 0; i < 5; ++i)
+  multi_scan_msg.ranges.resize(ALL_ECHOES_COUNT);
+  multi_scan_msg.intensities.resize(ALL_ECHOES_COUNT);
+  assert(multi_scan_msg.ranges.size() == multi_scan_msg.intensities.size());
+  for (size_t i = 0; i < multi_scan_msg.ranges.size(); ++i)
   {
     multi_scan_msg.ranges[i].echoes.resize(num_values);
     multi_scan_msg.intensities[i].echoes.resize(num_values);
@@ -112,7 +114,7 @@ bool setup(LMS5xx &laser, sensor_msgs::LaserScan &scan_msg, sensor_msgs::MultiEc
 
   ROS_DEBUG_STREAM("Time increment is " << static_cast<int>(scan_msg.time_increment * 1000000) << " microseconds");
 
-  dataCfg.output_channel = 5;
+  dataCfg.output_channel = 5; // Is ignored for LMS5xx
   dataCfg.remission = true;
   dataCfg.resolution = 0;
   dataCfg.encoder = 0;
