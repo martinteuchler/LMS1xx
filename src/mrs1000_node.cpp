@@ -17,7 +17,7 @@
 
 #include <csignal>
 #include <cstdio>
-#include <LMS1xx/MRS1000.h>
+#include <lms1xx/mrs1000.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
@@ -36,9 +36,9 @@ int main(int argc, char **argv)
 {
   // laser data
   MRS1000 laser;
-  scanCfg cfg;
-  scanOutputRange outputRange;
-  scanDataCfg dataCfg;
+  ScanConfig cfg;
+  ScanOutputRange outputRange;
+  ScanDataConfig dataCfg;
   sensor_msgs::PointCloud2 cloud;
 
   // parameters
@@ -85,8 +85,8 @@ int main(int argc, char **argv)
     ROS_DEBUG("Logging in to laser.");
     laser.login();
     /* in the evaluation prototype, those functions are not (yet) available
-    cfg = laser.getScanCfg();
-    outputRange = laser.getScanOutputRange();
+    cfg = laser.get_scan_config();
+    outputRange = laser.get_scan_output_range();
 
     if (cfg.scaningFrequency != 5000)
     {
@@ -108,21 +108,21 @@ int main(int argc, char **argv)
     dataCfg.outputInterval = 1;
 
     ROS_DEBUG("Setting scan data configuration.");
-    laser.setScanDataCfg(dataCfg);
+    laser.set_scan_data_config(dataCfg);
     */
     /* in the evaluation prototype, those functions are not (yet) available
      * TODO: How does this work? Do I need to always start using SOPAS?
     ROS_DEBUG("Starting measurements.");
-    laser.startMeas();
+    laser.start_measurement();
 
     ROS_DEBUG("Waiting for ready status.");
     ros::Time ready_status_timeout = ros::Time::now() + ros::Duration(5);
 
     //while(1)
     //{
-    status_t stat = laser.queryStatus();
+    CoLaA::Status stat = laser.query_status();
     ros::Duration(1.0).sleep();
-    if (stat != ready_for_measurement)
+    if (stat != CoLaA::Status::ReadyForMeasurement)
     {
       ROS_WARN("Laser not ready. Retrying initialization.");
       laser.disconnect();
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
     laser.startDevice(); // Log out to properly re-enable system after config
 
     ROS_DEBUG("Commanding continuous measurements.");
-    laser.scanContinous(1);
+    laser.scanContinuous(true);
 
     double start_angle = -275.0/2.0*DEG2RAD;
     double angle_inc = 0.25*DEG2RAD;
@@ -176,10 +176,11 @@ int main(int argc, char **argv)
 
       cloud.header.stamp = start;
 
+      //scanDataLayerMRS data;
       scanDataLayerMRS data;
       ROS_DEBUG("Reading scan data.");
 
-      if (laser.getScanDataLMSProtocol(&data))
+      if (laser.getScanData(&data))
       {
 
 	// reset iterators and layer counter when receiving the first one, so we collect all layers in one cloud
@@ -223,7 +224,7 @@ int main(int argc, char **argv)
       ros::spinOnce();
     }
 
-    laser.scanContinous(0);
+    laser.scanContinuous(false);
     /*
     laser.stopMeas();
     */

@@ -23,9 +23,9 @@
 
 #include <csignal>
 #include <cstdio>
-#include <LMS1xx/LMS1xx.h>
-#include "ros/ros.h"
-#include "sensor_msgs/LaserScan.h"
+#include <lms1xx/colaa.h>
+#include <sensor_msgs/LaserScan.h>
+#include <ros/ros.h>
 
 #define DEG2RAD M_PI/180.0
 
@@ -33,9 +33,9 @@ int main(int argc, char **argv)
 {
   // laser data
   LMS1xx laser;
-  scanCfg cfg;
-  scanOutputRange outputRange;
-  scanDataCfg dataCfg;
+  ScanConfig cfg;
+  ScanOutputRange output_range;
+  ScanDataConfig dataCfg;
   sensor_msgs::LaserScan scan_msg;
 
   // parameters
@@ -65,10 +65,10 @@ int main(int argc, char **argv)
 
     ROS_DEBUG("Logging in to laser.");
     laser.login();
-    cfg = laser.getScanCfg();
-    outputRange = laser.getScanOutputRange();
+    cfg = laser.getScanConfig();
+    output_range = laser.getScanOutputRange();
 
-    if (cfg.scaningFrequency != 5000)
+    if (cfg.scan_frequency != 5000)
     {
       laser.disconnect();
       ROS_WARN("Unable to get laser output range. Retrying.");
@@ -78,25 +78,25 @@ int main(int argc, char **argv)
 
     ROS_INFO("Connected to laser.");
 
-    ROS_DEBUG("Laser configuration: scaningFrequency %d, angleResolution %d, startAngle %d, stopAngle %d",
-              cfg.scaningFrequency, cfg.angleResolution, cfg.startAngle, cfg.stopAngle);
+    ROS_DEBUG("Laser configuration: scaningFrequency %d, activeSensors %d, angleResolution %d, startAngle %d, stopAngle %d",
+              cfg.scan_frequency, cfg.num_sectors, cfg.angualar_resolution, cfg.start_angle, cfg.stop_angle);
     ROS_DEBUG("Laser output range:angleResolution %d, startAngle %d, stopAngle %d",
-              outputRange.angleResolution, outputRange.startAngle, outputRange.stopAngle);
+              output_range.angular_resolution, output_range.start_angle, output_range.stop_angle);
 
     scan_msg.header.frame_id = frame_id;
     scan_msg.range_min = 0.01;
     scan_msg.range_max = 20.0;
-    scan_msg.scan_time = 100.0 / cfg.scaningFrequency;
-    scan_msg.angle_increment = (double)outputRange.angleResolution / 10000.0 * DEG2RAD;
-    scan_msg.angle_min = (double)outputRange.startAngle / 10000.0 * DEG2RAD - M_PI / 2;
-    scan_msg.angle_max = (double)outputRange.stopAngle / 10000.0 * DEG2RAD - M_PI / 2;
+    scan_msg.scan_time = 100.0 / cfg.scan_frequency;
+    scan_msg.angle_increment = (double)output_range.angular_resolution / 10000.0 * DEG2RAD;
+    scan_msg.angle_min = (double)output_range.start_angle / 10000.0 * DEG2RAD - M_PI / 2;
+    scan_msg.angle_max = (double)output_range.stop_angle / 10000.0 * DEG2RAD - M_PI / 2;
 
-    ROS_DEBUG_STREAM("Device resolution is " << (double)outputRange.angleResolution / 10000.0 << " degrees.");
-    ROS_DEBUG_STREAM("Device frequency is " << (double)cfg.scaningFrequency / 100.0 << " Hz");
+    ROS_DEBUG_STREAM("Device resolution is " << (double)output_range.angular_resolution / 10000.0 << " degrees.");
+    ROS_DEBUG_STREAM("Device frequency is " << (double)cfg.scan_frequency / 100.0 << " Hz");
 
-    int angle_range = outputRange.stopAngle - outputRange.startAngle;
-    int num_values = angle_range / outputRange.angleResolution ;
-    if (angle_range % outputRange.angleResolution == 0)
+    int angle_range = output_range.stop_angle - output_range.start_angle;
+    int num_values = angle_range / output_range.angular_resolution ;
+    if (angle_range % output_range.angular_resolution == 0)
     {
       // Include endpoint
       ++num_values;
@@ -105,65 +105,48 @@ int main(int argc, char **argv)
     scan_msg.intensities.resize(num_values);
 
     scan_msg.time_increment =
-      (outputRange.angleResolution / 10000.0)
+      (output_range.angular_resolution / 10000.0)
       / 360.0
-      / (cfg.scaningFrequency / 100.0);
+      / (cfg.scan_frequency / 100.0);
 
     ROS_DEBUG_STREAM("Time increment is " << static_cast<int>(scan_msg.time_increment * 1000000) << " microseconds");
 
-    dataCfg.outputChannel = 1;
+    dataCfg.output_channel = 1;
     dataCfg.remission = true;
     dataCfg.resolution = 1;
     dataCfg.encoder = 0;
     dataCfg.position = false;
-    dataCfg.deviceName = false;
-    dataCfg.outputInterval = 1;
+    dataCfg.device_name = false;
+    dataCfg.comment = false;
+    dataCfg.timestamp = false;
+    dataCfg.output_interval = 1;
 
     ROS_DEBUG("Setting scan data configuration.");
-    laser.setScanDataCfg(dataCfg);
+    laser.setScanDataConfig(dataCfg);
 
     ROS_DEBUG("Starting measurements.");
-    laser.startMeas();
+    laser.startMeasurement();
 
     ROS_DEBUG("Waiting for ready status.");
     ros::Time ready_status_timeout = ros::Time::now() + ros::Duration(5);
 
     //while(1)
     //{
-    status_t stat = laser.queryStatus();
+    CoLaAStatus::Status stat = laser.queryStatus();
     ros::Duration(1.0).sleep();
-    if (stat != ready_for_measurement)
+    if (stat != CoLaAStatus::ReadyForMeasurement)
     {
-      ROS_WARN("Laser not ready. Retrying initialization.");
+      ROS_WARN("Laser not ready (Current state: %d). Retrying initialization.", stat);
       laser.disconnect();
       ros::Duration(1).sleep();
       continue;
     }
-    /*if (stat == ready_for_measurement)
-    {
-      ROS_DEBUG("Ready status achieved.");
-      break;
-    }
-
-      if (ros::Time::now() > ready_status_timeout)
-      {
-        ROS_WARN("Timed out waiting for ready status. Trying again.");
-        laser.disconnect();
-        continue;
-      }
-
-      if (!ros::ok())
-      {
-        laser.disconnect();
-        return 1;
-      }
-    }*/
 
     ROS_DEBUG("Starting device.");
     laser.startDevice(); // Log out to properly re-enable system after config
 
     ROS_DEBUG("Commanding continuous measurements.");
-    laser.scanContinous(1);
+    laser.scanContinuous(true);
 
     while (ros::ok())
     {
@@ -172,20 +155,15 @@ int main(int argc, char **argv)
       scan_msg.header.stamp = start;
       ++scan_msg.header.seq;
 
-      scanData data;
+      ScanData data;
       ROS_DEBUG("Reading scan data.");
       if (laser.getScanData(&data))
       {
-        for (int i = 0; i < data.dist_len1; i++)
+        for (size_t k = 0; k < data.ch16bit[0].data.size(); ++k)
         {
-          scan_msg.ranges[i] = data.dist1[i] * 0.001;
+          scan_msg.ranges[k] = data.ch16bit[0].data[k] * 0.001;
+          scan_msg.intensities[k] = data.ch16bit[1].data[k];
         }
-
-        for (int i = 0; i < data.rssi_len1; i++)
-        {
-          scan_msg.intensities[i] = data.rssi1[i];
-        }
-
         ROS_DEBUG("Publishing scan data.");
         scan_pub.publish(scan_msg);
       }
@@ -198,8 +176,8 @@ int main(int argc, char **argv)
       ros::spinOnce();
     }
 
-    laser.scanContinous(0);
-    laser.stopMeas();
+    laser.scanContinuous(false);
+    laser.stopMeasurement();
     laser.disconnect();
   }
 
