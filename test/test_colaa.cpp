@@ -16,7 +16,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "LMS1xx/colaa_structs.h"
+#include "lms1xx/colaa_structs.h"
 
 class CoLaATest : public ::testing::Test
 {

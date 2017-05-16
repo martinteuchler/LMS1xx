@@ -17,7 +17,7 @@
 
 #ifndef MRS1000_H
 #define MRS1000_H
-#include <LMS1xx/colaa.h>
+#include <lms1xx/colaa.h>
 
 struct dataChannel
 {

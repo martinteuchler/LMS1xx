@@ -17,7 +17,7 @@
 
 #include <csignal>
 #include <cstdio>
-#include <LMS1xx/lms5xx.h>
+#include <lms1xx/lms5xx.h>
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/MultiEchoLaserScan.h>

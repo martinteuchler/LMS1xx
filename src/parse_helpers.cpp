@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LMS1xx/parse_helpers.h"
+#include "lms1xx/parse_helpers.h"
 
 #include <cstring>
 

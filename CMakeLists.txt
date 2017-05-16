@@ -15,7 +15,7 @@ target_link_libraries(CoLaA ${console_bridge_LIBRARIES})
 add_library(LMS5xx src/lms5xx.cpp)
 target_link_libraries(LMS5xx CoLaA ${console_bridge_LIBRARIES})
 
-add_library(MRS1000 src/MRS1000.cpp)
+add_library(MRS1000 src/mrs1000.cpp)
 target_link_libraries(MRS1000 CoLaA ${console_bridge_LIBRARIES})
 
 
@@ -25,11 +25,11 @@ catkin_package(CATKIN_DEPENDS roscpp sensor_msgs)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(LMS1xx_node src/LMS1xx_node.cpp)
+add_executable(LMS1xx_node src/lms1xx_node.cpp)
 target_link_libraries(LMS1xx_node CoLaA ${catkin_LIBRARIES})
 add_dependencies(LMS1xx_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(MRS1000_node src/MRS1000_node.cpp)
+add_executable(MRS1000_node src/mrs1000_node.cpp)
 target_link_libraries(MRS1000_node MRS1000 ${catkin_LIBRARIES})
 add_dependencies(MRS1000_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

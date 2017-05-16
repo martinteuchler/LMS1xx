@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "LMS1xx/colaa_structs.h"
+#include "lms1xx/colaa_structs.h"
 
 class LMSBuffer;
 

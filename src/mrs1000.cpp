@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LMS1xx/MRS1000.h"
+#include "lms1xx/mrs1000.h"
 #include <cstring>
 #include <console_bridge/console.h>
 

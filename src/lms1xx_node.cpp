@@ -23,7 +23,7 @@
 
 #include <csignal>
 #include <cstdio>
-#include <LMS1xx/colaa.h>
+#include <lms1xx/colaa.h>
 #include <sensor_msgs/LaserScan.h>
 #include <ros/ros.h>
 

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LMS1xx/colaa.h"
+#include "lms1xx/colaa.h"
 
 #include <iostream>
 #include <sys/socket.h>
@@ -26,8 +26,8 @@
 #include <iomanip>
 #include <inttypes.h>
 
-#include "LMS1xx/lms_buffer.h"
-#include "LMS1xx/parse_helpers.h"
+#include "lms1xx/lms_buffer.h"
+#include "lms1xx/parse_helpers.h"
 
 constexpr uint8_t STX = 0x02; //Start transmission marker
 constexpr uint8_t ETX = 0x03; //End transmission marker

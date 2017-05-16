@@ -20,8 +20,8 @@
 
 #include <stdint.h>
 #include <string>
-#include <LMS1xx/colaa.h>
-#include <LMS1xx/colaa_structs.h>
+#include <lms1xx/colaa.h>
+#include <lms1xx/colaa_structs.h>
 
 /**
  * @brief Specialises CoLaA base implementation for the LMS5xx series of scanners

@@ -20,7 +20,7 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "LMS1xx/lms_buffer.h"
+#include "lms1xx/lms_buffer.h"
 #include <gtest/gtest.h>
 
 #include <errno.h>

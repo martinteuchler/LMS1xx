@@ -18,7 +18,7 @@
 #ifndef COLAA_STRUCTS_H
 #define COLAA_STRUCTS_H
 
-#include "LMS1xx/parse_helpers.h"
+#include "lms1xx/parse_helpers.h"
 #include <vector>
 
 namespace CoLaAStatus
