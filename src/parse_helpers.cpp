@@ -18,6 +18,7 @@
 #include "lms1xx/parse_helpers.h"
 
 #include <cstring>
+#include <sstream>
 
 void nextToken(char **buf, uint8_t &val)
 {
@@ -57,7 +58,11 @@ void nextToken(char **buf, int16_t &val)
 void nextToken(char **buf, float &val)
 {
   char *str = strtok(*buf, " ");
-  val = *reinterpret_cast<float *>(str);
+  uint32_t mem;
+  std::stringstream ss;
+  ss << std::hex << str;
+  ss >> mem;
+  val = *reinterpret_cast<float *>(&mem);
   *buf += strlen(str) + 1;
 }
 

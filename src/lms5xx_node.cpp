@@ -259,7 +259,7 @@ int main(int argc, char **argv)
         // Configured echo or first echo if "all" is selected
         for (size_t k = 0; k < data.ch16bit[0].data.size(); ++k)
         {
-          scan_msg.ranges[k] = data.ch16bit[0].data[k] * 0.001;
+          scan_msg.ranges[k] = data.ch16bit[0].data[k] * 0.001 * data.ch16bit[0].header.scale_factor;
           scan_msg.intensities[k] = data.ch8bit[0].data[k];
         }
         ROS_DEBUG("Publishing single scan data.");
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
           {
             for (size_t k = 0; k < data.ch16bit[i].data.size(); ++k)
             {
-              multi_scan_msg.ranges[i].echoes[k] = data.ch16bit[i].data[k] * 0.001;
+              multi_scan_msg.ranges[i].echoes[k] = data.ch16bit[i].data[k] * 0.001 * data.ch16bit[i].header.scale_factor;
               multi_scan_msg.intensities[i].echoes[k] = data.ch8bit[i].data[k];
             }
           }

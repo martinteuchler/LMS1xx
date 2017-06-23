@@ -57,6 +57,8 @@ if (CATKIN_ENABLE_TESTING)
   target_link_libraries(test_colaa CoLaA ${catkin_LIBRARIES})
   add_dependencies(test_colaa CoLaA)
 
+  catkin_add_gtest(parse_helper_test test/parse_helper_test.cpp src/parse_helpers.cpp)
+
   find_package(roslint REQUIRED)
   roslint_cpp()
   #roslint_add_test()
