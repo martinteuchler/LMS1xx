@@ -44,7 +44,7 @@ class MRS1000 : public CoLaA
 public:
 
 protected:
-  void parseScanData(char *buffer, void *scan_data);
+  void parseScanData(char *buffer, void *scan_data) const;
 };
 
 #endif // MRS1000_H

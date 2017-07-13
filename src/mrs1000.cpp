@@ -19,7 +19,7 @@
 #include <cstring>
 #include <console_bridge/console.h>
 
-void MRS1000::parseScanData(char *buffer, void *data)
+void MRS1000::parseScanData(char *buffer, void *data) const
 {
   scanDataLayerMRS *scan_data = (scanDataLayerMRS *)data;
   char* tok = strtok(buffer, " "); //Type of command
