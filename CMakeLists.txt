@@ -29,11 +29,11 @@ add_executable(LMS1xx_node src/lms1xx_node.cpp)
 target_link_libraries(LMS1xx_node CoLaA ${catkin_LIBRARIES})
 add_dependencies(LMS1xx_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(MRS1000_node src/mrs1000_node.cpp)
+add_executable(MRS1000_node src/mrs1000_node.cpp src/colaa_conversion.cpp)
 target_link_libraries(MRS1000_node MRS1000 ${catkin_LIBRARIES})
 add_dependencies(MRS1000_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(LMS5xx_node src/lms5xx_node.cpp)
+add_executable(LMS5xx_node src/lms5xx_node.cpp src/colaa_conversion.cpp)
 target_link_libraries(LMS5xx_node LMS5xx ${catkin_LIBRARIES})
 add_dependencies(LMS5xx_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

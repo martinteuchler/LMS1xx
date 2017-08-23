@@ -21,6 +21,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/MultiEchoLaserScan.h>
+#include "lms1xx/colaa_conversion.h"
 
 constexpr double DEG2RAD = M_PI/180.0;
 constexpr size_t ALL_ECHOES_COUNT = 5;
@@ -69,16 +70,10 @@ bool setup(LMS5xx &laser, sensor_msgs::LaserScan &scan_msg, sensor_msgs::MultiEc
   scan_msg.range_min = 0.01;
   scan_msg.range_max = max_range;
   scan_msg.scan_time = 100.0 / cfg.scan_frequency;
-  scan_msg.angle_increment = (double)output_range.angular_resolution / 10000.0 * DEG2RAD;
-  scan_msg.angle_min = (double)output_range.start_angle / 10000.0 * DEG2RAD - M_PI / 2;
-  scan_msg.angle_max = (double)output_range.stop_angle / 10000.0 * DEG2RAD - M_PI / 2;
 
   multi_scan_msg.range_min = 0.01;
   multi_scan_msg.range_max = max_range;
   multi_scan_msg.scan_time = 100.0 / cfg.scan_frequency;
-  multi_scan_msg.angle_increment = (double)output_range.angular_resolution / 10000.0 * DEG2RAD;
-  multi_scan_msg.angle_min = (double)output_range.start_angle / 10000.0 * DEG2RAD - M_PI / 2;
-  multi_scan_msg.angle_max = (double)output_range.stop_angle / 10000.0 * DEG2RAD - M_PI / 2;
 
   ROS_DEBUG_STREAM("Device resolution is " << (double)output_range.angular_resolution / 10000.0 << " degrees.");
   ROS_DEBUG_STREAM("Device frequency is " << (double)cfg.scan_frequency / 100.0 << " Hz");
@@ -255,27 +250,16 @@ int main(int argc, char **argv)
       ROS_DEBUG("Reading scan data.");
       if (laser.getScanData(&data))
       {
-        assert(data.ch16bit[0].data.size() == scan_msg.ranges.size());
         // Configured echo or first echo if "all" is selected
-        for (size_t k = 0; k < data.ch16bit[0].data.size(); ++k)
-        {
-          scan_msg.ranges[k] = data.ch16bit[0].data[k] * 0.001 * data.ch16bit[0].header.scale_factor;
-          scan_msg.intensities[k] = data.ch8bit[0].data[k];
-        }
+        CoLaAConversion::fillLaserScan(scan_msg, data);
         ROS_DEBUG("Publishing single scan data.");
         scan_pub.publish(scan_msg);
 
         // The multi-echo message if all echoes are selected
         if (echo_mode == CoLaAEchoFilter::AllEchoes)
         {
-          for (size_t i = 0; i < data.ch16bit.size(); ++i)
-          {
-            for (size_t k = 0; k < data.ch16bit[i].data.size(); ++k)
-            {
-              multi_scan_msg.ranges[i].echoes[k] = data.ch16bit[i].data[k] * 0.001 * data.ch16bit[i].header.scale_factor;
-              multi_scan_msg.intensities[i].echoes[k] = data.ch8bit[i].data[k];
-            }
-          }
+
+          CoLaAConversion::fillMultiEchoLaserScan(multi_scan_msg, data);
           ROS_DEBUG("Publishing multi scan data.");
           multi_pub.publish(multi_scan_msg);
         }

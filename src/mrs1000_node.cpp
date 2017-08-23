@@ -15,12 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sstream>
 #include <lms1xx/mrs1000.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/MultiEchoLaserScan.h>
+#include <sensor_msgs/LaserScan.h>
+#include "lms1xx/colaa_conversion.h"
 
-#define DEG2RAD M_PI/180.0
+static size_t getLayerIndex(uint16_t layer)
+{
+  switch (layer) {
+  case CoLaALayers::Layer2:
+    return 0;
+  case CoLaALayers::Layer3:
+    return 1;
+  case CoLaALayers::Layer1:
+    return 2;
+  case CoLaALayers::Layer4:
+    return 3;
+  }
+  return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -30,6 +47,8 @@ int main(int argc, char **argv)
   ScanOutputRange output_range;
   ScanDataConfig data_cfg;
   sensor_msgs::PointCloud2 cloud;
+  sensor_msgs::MultiEchoLaserScan multi_scan;
+  sensor_msgs::LaserScan scan;
 
   // parameters
   std::string host;
@@ -41,14 +60,47 @@ int main(int argc, char **argv)
   ros::NodeHandle n("~");
   ros::Publisher cloud_pub = nh.advertise<sensor_msgs::PointCloud2>("cloud", 1);
 
+  std::vector<ros::Publisher> layer_multi_pubs;
+  layer_multi_pubs.push_back(nh.advertise<sensor_msgs::MultiEchoLaserScan>("scan_layer_2_multi", 1));
+  layer_multi_pubs.push_back(nh.advertise<sensor_msgs::MultiEchoLaserScan>("scan_layer_3_multi", 1));
+  layer_multi_pubs.push_back(nh.advertise<sensor_msgs::MultiEchoLaserScan>("scan_layer_1_multi", 1));
+  layer_multi_pubs.push_back(nh.advertise<sensor_msgs::MultiEchoLaserScan>("scan_layer_4_multi", 1));
+
+  std::vector<ros::Publisher> layer_pubs;
+  layer_pubs.push_back(nh.advertise<sensor_msgs::LaserScan>("scan_layer_2", 1));
+  layer_pubs.push_back(nh.advertise<sensor_msgs::LaserScan>("scan_layer_3", 1));
+  layer_pubs.push_back(nh.advertise<sensor_msgs::LaserScan>("scan_layer_1", 1));
+  layer_pubs.push_back(nh.advertise<sensor_msgs::LaserScan>("scan_layer_4", 1));
+
   n.param<std::string>("host", host, "192.168.1.2");
   n.param<std::string>("frame_id", frame_id, "laser");
   n.param<int>("port", port, 2111);
 
+  size_t scan_count = 275 * 4 + 1; // 275° with a resolution of 0.25° (+ 1)
+
   cloud.header.frame_id = frame_id;
   cloud.header.stamp = ros::Time::now();
   cloud.height = 4; // 4 layers
-  cloud.width = 275*4+1; // 275° with a resolution of 0.25° (+ 1)
+  cloud.width = scan_count;
+
+  // TODO individual frames for layers?
+  multi_scan.range_min = .2;
+  multi_scan.range_max = 64;
+  multi_scan.header.frame_id = frame_id;
+  multi_scan.ranges.resize(3);
+  multi_scan.intensities.resize(3);
+
+  scan.range_min = .2;
+  scan.range_max = 64;
+  scan.header.frame_id = frame_id;
+  scan.ranges.resize(scan_count);
+  scan.intensities.resize(scan_count);
+
+  for (size_t i = 0; i < multi_scan.ranges.size(); ++i)
+  {
+    multi_scan.ranges[i].echoes.resize(scan_count);
+    multi_scan.intensities[i].echoes.resize(scan_count);
+  }
 
   //Fill the fields using the PointCloudModifier
   sensor_msgs::PointCloud2Modifier modifier(cloud);
@@ -84,6 +136,11 @@ int main(int argc, char **argv)
               cfg.scan_frequency, cfg.num_sectors, cfg.angualar_resolution, cfg.start_angle, cfg.stop_angle);
     ROS_DEBUG("Laser output range: angleResolution %d, startAngle %d, stopAngle %d",
               output_range.angular_resolution, output_range.start_angle, output_range.stop_angle);
+
+    multi_scan.scan_time = 100.0 / cfg.scan_frequency;
+    multi_scan.time_increment = (output_range.angular_resolution / 10000.0) / 360.0 / multi_scan.scan_time;
+    scan.scan_time = multi_scan.scan_time;
+    scan.time_increment = multi_scan.time_increment;
 
     ROS_INFO("Connected to laser.");
 
@@ -140,6 +197,15 @@ int main(int argc, char **argv)
 
       if (laser.getScanData(&data))
       {
+        CoLaAConversion::fillLaserScan(scan, data);
+        ROS_DEBUG("Publishing scan data");
+        layer_pubs.at(getLayerIndex(data.header.status_info.layer_angle)).publish(scan);
+
+        // Publish Multiecho scan for this layer
+        CoLaAConversion::fillMultiEchoLaserScan(multi_scan, data);
+        ROS_DEBUG("Publishing multi scan data.");
+        layer_multi_pubs.at(getLayerIndex(data.header.status_info.layer_angle)).publish(multi_scan);
+
         // reset iterators when receiving the first one, so we collect all layers in one cloud
         if (data.header.status_info.layer_angle == CoLaALayers::Layer2)
         {
@@ -150,26 +216,10 @@ int main(int argc, char **argv)
           synced = true;
         }
 
-
         if (!synced)
           continue;
 
-        float layerAngle = CoLaALayers::getLayerAngle(
-              static_cast<CoLaALayers::Layers>(data.header.status_info.layer_angle));
-        float cosLA = cos(layerAngle);
-        float sinLA = sin(layerAngle);
-        double startAngle = data.ch16bit[0].header.start_angle * M_PI / 180.0 / 10000.0;
-        double angleIncrement = data.ch16bit[0].header.step_size * M_PI / 180.0 / 10000.0;
-
-        for (size_t i = 0; i < data.ch16bit[0].data.size(); ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_int)
-        {
-          double dist = data.ch16bit[0].data[i] * 0.001 * data.ch16bit[0].header.scale_factor;
-          double angle = startAngle + i * angleIncrement;
-          *iter_x = dist * cos(angle) * cosLA;
-          *iter_y = dist * sin(angle) * cosLA;
-          *iter_z = dist * sinLA;
-          *iter_int = data.ch8bit[0].data[i];
-        }
+        CoLaAConversion::fillPointCloud2(iter_x, iter_y, iter_z, iter_int, data);
 
         // Check if this is the last layer of the msg
         if (data.header.status_info.layer_angle == CoLaALayers::Layer4)
