@@ -19,19 +19,6 @@
 #include <sstream>
 #include <iomanip>
 
-LMS5xx::LMS5xx()
-{
-  SET_ECHO_FILTER_COMMAND = "sWN FREchoFilter";
-}
-
-void LMS5xx::setEchoFilter(LMS5xx::EchoFilter filter)
-{
-  std::stringstream cmd;
-  cmd << SET_ECHO_FILTER_COMMAND << " " << filter;
-  sendCommand(cmd.str());
-  readBack();
-}
-
 std::string LMS5xx::buildScanDataCfgOutputChannel(int ch) const
 {
   // Set via Echo Filter

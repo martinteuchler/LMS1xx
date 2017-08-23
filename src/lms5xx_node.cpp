@@ -40,7 +40,7 @@ void usage()
 }
 
 bool setup(LMS5xx &laser, sensor_msgs::LaserScan &scan_msg, sensor_msgs::MultiEchoLaserScan &multi_scan_msg,
-           const LMS5xx::EchoFilter echo_mode, double max_range)
+           const CoLaAEchoFilter::EchoFilter echo_mode, double max_range)
 {
   ScanConfig cfg;
   ScanOutputRange output_range;
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
   std::string frame_id;
   int port;
   std::string echoes;
-  LMS5xx::EchoFilter echo_mode = LMS5xx::EchoFilter::AllEchoes;
+  CoLaAEchoFilter::EchoFilter echo_mode = CoLaAEchoFilter::AllEchoes;
   double max_range = 80;
 
   ros::init(argc, argv, "lms5xx");
@@ -174,16 +174,16 @@ int main(int argc, char **argv)
 
   if (echoes == std::string("first"))
   {
-    echo_mode = LMS5xx::EchoFilter::FirstEcho;
+    echo_mode = CoLaAEchoFilter::FirstEcho;
   }
   else if (echoes == std::string("last"))
   {
-    echo_mode = LMS5xx::EchoFilter::LastEcho;
+    echo_mode = CoLaAEchoFilter::LastEcho;
   }
   else if (echoes == std::string("all"))
   {
     multi_pub = nh.advertise<sensor_msgs::MultiEchoLaserScan>("multi_echo", 1);
-    echo_mode = LMS5xx::EchoFilter::AllEchoes;
+    echo_mode = CoLaAEchoFilter::AllEchoes;
   }
   else
   {
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
         scan_pub.publish(scan_msg);
 
         // The multi-echo message if all echoes are selected
-        if (echo_mode == LMS5xx::EchoFilter::AllEchoes)
+        if (echo_mode == CoLaAEchoFilter::AllEchoes)
         {
           for (size_t i = 0; i < data.ch16bit.size(); ++i)
           {

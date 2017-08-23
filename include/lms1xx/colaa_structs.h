@@ -20,6 +20,7 @@
 
 #include "lms1xx/parse_helpers.h"
 #include <vector>
+#include <cmath>
 
 namespace CoLaAStatus
 {
@@ -79,7 +80,6 @@ enum SopasError
   PARSE_ERROR = 999 // Failed to parse error code
 };
 
-
 /**
  * @brief parse_error Parse error code from message
  * @param buf expected to be at the first character of the ASCII error code in the message.
@@ -104,6 +104,44 @@ static SopasError parseError(const char *buf, bool twodigits)
     return SopasError::PARSE_ERROR;
   }
   return static_cast<SopasError>(10 * tens + ones);
+}
+}
+
+/**
+ * @brief Echo return configuration
+ */
+namespace CoLaAEchoFilter
+{
+enum EchoFilter : uint8_t
+{
+  FirstEcho = 0,
+  AllEchoes = 1,
+  LastEcho = 2
+};
+}
+
+namespace CoLaALayers
+{
+enum Layers : uint16_t
+{
+  Layer2 = 0,
+  Layer3 = 0xff06,
+  Layer1 = 0xfa,
+  Layer4 = 0xfe0c
+};
+static float getLayerAngle(Layers l)
+{
+  switch (l) {
+    case Layer2:
+    return 0;
+    case Layer3:
+    return 2.5 * M_PI / 180.0;
+    case Layer1:
+    return -2.5 * M_PI / 180.0;
+    case Layer4:
+    return 5 * M_PI / 180.0;
+  }
+  return 0;
 }
 }
 
@@ -312,9 +350,9 @@ struct ScanDataHeader
     uint8_t status_digitalout_2;
 
     /**
-     * @brief Reserved
+     * @brief Formerly reserved, now layer angle (MRS1000 only)
      */
-    uint16_t reserved;
+    uint16_t layer_angle;
   } status_info;
 
   // Frequencies section

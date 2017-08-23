@@ -47,17 +47,21 @@ CoLaA::CoLaA() : connected_(false)
   READ_SCAN_CFG_COMMAND = "sRN LMPscancfg";
   SET_SCAN_CFG_COMMAND = "sMN mLMPsetscancfg";
   SET_SCAN_DATA_CFG_COMMAND = "sWN LMDscandatacfg";
+  SET_ECHO_FILTER_COMMAND = "sWN FREchoFilter";
   SAVE_CONFIG_COMMAND = "sMN mEEwriteall";
 
   START_MEASUREMENT_COMMAND = "sMN LMCstartmeas";
   STOP_MEASUREMENT_COMMAND = "sMN LMCstopmeas";
-  START_CONT_COMMAND = "sEN LMDscandata";
+  REQUEST_SCANS_CONTINUOUSLY = "sEN LMDscandata";
+  REQUEST_LAST_SCAN = "sRN LMDscandata";
 
   QUERY_STATUS_COMMAND = "sRN STlms";
 
   READ_SCAN_OUTPUT_RANGE_COMMAND = "sRN LMPoutputRange";
 
   START_DEVICE_COMMAND = "sMN Run";
+
+  SCAN_DATA_REPLY = "sEA LMDscandata";
 }
 
 CoLaA::~CoLaA()
@@ -161,6 +165,14 @@ void CoLaA::setScanDataConfig(const ScanDataConfig &cfg)
   readBack();
 }
 
+void CoLaA::setEchoFilter(CoLaAEchoFilter::EchoFilter filter)
+{
+  std::stringstream cmd;
+  cmd << SET_ECHO_FILTER_COMMAND << " " << filter;
+  sendCommand(cmd.str());
+  readBack();
+}
+
 ScanConfig CoLaA::getScanConfig()
 {
   sendCommand(READ_SCAN_CFG_COMMAND);
@@ -213,8 +225,14 @@ ScanOutputRange CoLaA::getScanOutputRange()
 
 void CoLaA::scanContinuous(bool start)
 {
-  std::string command = START_CONT_COMMAND + " " + std::to_string(static_cast<int>(start));
+  std::string command = REQUEST_SCANS_CONTINUOUSLY + " " + std::to_string(static_cast<int>(start));
   sendCommand(command);
+  readBack();
+}
+
+void CoLaA::requestLastScan()
+{
+  sendCommand(REQUEST_LAST_SCAN);
   readBack();
 }
 
@@ -246,9 +264,12 @@ bool CoLaA::getScanData(void *scan_data)
 
       if (buffer_data)
       {
-        parseScanData(buffer_data, scan_data);
+        bool success = parseScanData(buffer_data, scan_data);
         buffer_->popLastBuffer();
-        return true;
+        if (success)
+          return true;
+        else
+          continue;
       }
     }
     else
@@ -297,7 +318,7 @@ std::string CoLaA::buildScanDataCfg(const ScanDataConfig &cfg) const
   ss << buildScanDataCfgOutputChannel(cfg.output_channel);
   ss << " " << cfg.remission;
   ss << " " << cfg.resolution;
-  ss << " 0"; // Resolution, always 0
+  ss << " 0"; // Unit of remission data, always 0
   ss << " " << buildScanDataCfgEncoder(cfg.encoder);
   ss << " " << cfg.position;
   ss << " " << cfg.device_name;
@@ -325,21 +346,29 @@ std::string CoLaA::buildScanDataCfgEncoder(int enc) const
   return "00 00"; // Data sheet says "No encoder: 0, but that produces an error"
 }
 
-void CoLaA::parseScanData(char *buffer, void *__data) const
+bool CoLaA::parseScanData(char *buffer, void *__data) const
 {
   ScanData *data = (ScanData *)__data;
+  std::string prefix;
+  nextToken(&buffer, prefix); // Command Type, either sRN or sNA
+  prefix = prefix.substr(1); // Chop off start marker
+  std::string command;
+  nextToken(&buffer,command); // Command: LMDscandata
+  std::string currentCommand = prefix.append(" ").append(command);
+  // Check if we captured a late reply for the start measurement command
+  if (currentCommand == SCAN_DATA_REPLY)
+    return false;
+
   data->header = parseScanDataHeader(&buffer);
   parseScanDataEncoderdata(&buffer);
   data->ch16bit = ChannelData<uint16_t>::parseScanDataChannels(&buffer);
   data->ch8bit = ChannelData<uint8_t>::parseScanDataChannels(&buffer);
+  return true;
 }
 
 ScanDataHeader CoLaA::parseScanDataHeader(char **buf) const
 {
   ScanDataHeader header;
-  nextToken(buf); // Command Type, either sRN or sNA
-  nextToken(buf); // Command: LMDscandata
-
   nextToken(buf, header.version_number);
 
   nextToken(buf, header.device.device_number);
@@ -355,7 +384,7 @@ ScanDataHeader CoLaA::parseScanDataHeader(char **buf) const
   nextToken(buf, header.status_info.status_digitalin_2);
   nextToken(buf, header.status_info.status_digitalout_1);
   nextToken(buf, header.status_info.status_digitalout_2);
-  nextToken(buf, header.status_info.reserved);
+  nextToken(buf, header.status_info.layer_angle);
 
   nextToken(buf, header.frequencies.scan_frequency);
   nextToken(buf, header.frequencies.measurement_frequency);

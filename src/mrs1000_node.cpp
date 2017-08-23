@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <csignal>
-#include <cstdio>
 #include <lms1xx/mrs1000.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -24,21 +22,13 @@
 
 #define DEG2RAD M_PI/180.0
 
-// those are basically spherical coordinate
-void dist_from_scan(float &out_x, float &out_y, float &out_z, float dist, float angle, float vertical_angle)
-{
-  out_x = dist * cos(angle) * cos(vertical_angle);
-  out_y = dist * sin(angle) * cos(vertical_angle);
-  out_z = dist * sin(vertical_angle);
-}
-
 int main(int argc, char **argv)
 {
   // laser data
   MRS1000 laser;
   ScanConfig cfg;
-  ScanOutputRange outputRange;
-  ScanDataConfig dataCfg;
+  ScanOutputRange output_range;
+  ScanDataConfig data_cfg;
   sensor_msgs::PointCloud2 cloud;
 
   // parameters
@@ -82,84 +72,51 @@ int main(int argc, char **argv)
       continue;
     }
 
+    //laser.stopMeasurement();
+
     ROS_DEBUG("Logging in to laser.");
     laser.login();
-    /* in the evaluation prototype, those functions are not (yet) available
-    cfg = laser.get_scan_config();
-    outputRange = laser.get_scan_output_range();
 
-    if (cfg.scaningFrequency != 5000)
-    {
-      laser.disconnect();
-      ROS_WARN("Unable to get laser output range. Retrying.");
-      ros::Duration(1).sleep();
-      continue;
-    }*/
+    cfg = laser.getScanConfig();
+    output_range = laser.getScanOutputRange();
+
+    ROS_DEBUG("Laser configuration: scaningFrequency %d, activeSensors %d, angleResolution %d, startAngle %d, stopAngle %d",
+              cfg.scan_frequency, cfg.num_sectors, cfg.angualar_resolution, cfg.start_angle, cfg.stop_angle);
+    ROS_DEBUG("Laser output range: angleResolution %d, startAngle %d, stopAngle %d",
+              output_range.angular_resolution, output_range.start_angle, output_range.stop_angle);
 
     ROS_INFO("Connected to laser.");
 
-    /* in the evaluation prototype, those functions are not (yet) available
-    dataCfg.outputChannel = 1;
-    dataCfg.remission = true;
-    dataCfg.resolution = 1;
-    dataCfg.encoder = 0;
-    dataCfg.position = false;
-    dataCfg.deviceName = false;
-    dataCfg.outputInterval = 1;
+    data_cfg.output_channel = 7; // 1 + 2 + 3
+    data_cfg.remission = true;
+    data_cfg.resolution = 0;
+    data_cfg.encoder = 0;
+    data_cfg.position = false;
+    data_cfg.device_name = false;
+    data_cfg.comment = false;
+    data_cfg.timestamp = 1;
+    data_cfg.output_interval = 1; // all scans
 
     ROS_DEBUG("Setting scan data configuration.");
-    laser.set_scan_data_config(dataCfg);
-    */
-    /* in the evaluation prototype, those functions are not (yet) available
-     * TODO: How does this work? Do I need to always start using SOPAS?
-    ROS_DEBUG("Starting measurements.");
-    laser.start_measurement();
+    laser.setScanDataConfig(data_cfg);
 
-    ROS_DEBUG("Waiting for ready status.");
-    ros::Time ready_status_timeout = ros::Time::now() + ros::Duration(5);
+    ROS_DEBUG("Setting echo configuration");
+    laser.setEchoFilter(CoLaAEchoFilter::AllEchoes);
 
-    //while(1)
-    //{
-    CoLaA::Status stat = laser.query_status();
-    ros::Duration(1.0).sleep();
-    if (stat != CoLaA::Status::ReadyForMeasurement)
-    {
-      ROS_WARN("Laser not ready. Retrying initialization.");
-      laser.disconnect();
-      ros::Duration(1).sleep();
-      continue;
-    }
-    /*if (stat == ready_for_measurement)
-    {
-      ROS_DEBUG("Ready status achieved.");
-      break;
-    }
+    ROS_DEBUG("Setting application mode");
+    laser.enableRangingApplication();
 
-      if (ros::Time::now() > ready_status_timeout)
-      {
-        ROS_WARN("Timed out waiting for ready status. Trying again.");
-        laser.disconnect();
-        continue;
-      }
+    laser.saveConfig();
 
-      if (!ros::ok())
-      {
-        laser.disconnect();
-        return 1;
-      }
-    }*/
-
-    ROS_DEBUG("Starting device.");
+    ROS_INFO("Starting device...");
     laser.startDevice(); // Log out to properly re-enable system after config
 
-    ROS_DEBUG("Commanding continuous measurements.");
+    laser.startMeasurement();
+    //ros::Duration(20.0).sleep();
+
+    ROS_INFO("...started. Starting continuous measurements");
     laser.scanContinuous(true);
-
-    double start_angle = -275.0/2.0*DEG2RAD;
-    double angle_inc = 0.25*DEG2RAD;
-
-    bool synced = false;
-    int layers_received = 0;
+    //laser.requestLastScan();
 
     sensor_msgs::PointCloud2Iterator<float>iter_x(cloud, "x");
     sensor_msgs::PointCloud2Iterator<float>iter_y(cloud, "y");
@@ -169,6 +126,7 @@ int main(int argc, char **argv)
     sensor_msgs::PointCloud2Iterator<float>start_iter_y(cloud, "y");
     sensor_msgs::PointCloud2Iterator<float>start_iter_z(cloud, "z");
     sensor_msgs::PointCloud2Iterator<float>start_iter_int(cloud, "intensity");
+    bool synced = false;
 
     while (ros::ok())
     {
@@ -177,57 +135,59 @@ int main(int argc, char **argv)
       cloud.header.stamp = start;
 
       //scanDataLayerMRS data;
-      scanDataLayerMRS data;
+      ScanData data;
       ROS_DEBUG("Reading scan data.");
 
       if (laser.getScanData(&data))
       {
-
-	// reset iterators and layer counter when receiving the first one, so we collect all layers in one cloud
-        if (data.first)
+        // reset iterators when receiving the first one, so we collect all layers in one cloud
+        if (data.header.status_info.layer_angle == CoLaALayers::Layer2)
         {
           iter_x = start_iter_x;
           iter_y = start_iter_y;
           iter_z = start_iter_z;
           iter_int = start_iter_int;
           synced = true;
-          layers_received = 0;
         }
 
 
         if (!synced)
           continue;
 
-	// if we would want to use all channels (i.e. all echos), we need to handle this better
-	// i.e. without specifying this with fixed values...
-	// for now, just use the first echo
-	// for (size_t j = 0; j < (sizeof(data.channel)/sizeof(*(data.channel))); ++j)
-        for (size_t j = 0; j < 1; ++j)
+        float layerAngle = CoLaALayers::getLayerAngle(
+              static_cast<CoLaALayers::Layers>(data.header.status_info.layer_angle));
+        float cosLA = cos(layerAngle);
+        float sinLA = sin(layerAngle);
+        double startAngle = data.ch16bit[0].header.start_angle * M_PI / 180.0 / 10000.0;
+        double angleIncrement = data.ch16bit[0].header.step_size * M_PI / 180.0 / 10000.0;
+
+        for (size_t i = 0; i < data.ch16bit[0].data.size(); ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_int)
         {
-          for (int i = 0; i < data.channel[j].data_len; ++i, ++iter_x, ++iter_y, ++iter_z, ++ iter_int)
-          {
-            dist_from_scan(*iter_x, *iter_y, *iter_z, data.channel[j].dist[i]*0.001, start_angle+i*angle_inc, -data.layer_angle*DEG2RAD);
-            *iter_int = data.channel[j].rssi[i];
-          }
+          double dist = data.ch16bit[0].data[i] * 0.001 * data.ch16bit[0].header.scale_factor;
+          double angle = startAngle + i * angleIncrement;
+          *iter_x = dist * cos(angle) * cosLA;
+          *iter_y = dist * sin(angle) * cosLA;
+          *iter_z = dist * sinLA;
+          *iter_int = data.ch8bit[0].data[i];
         }
-        ++layers_received;
-        ROS_DEBUG("Publishing scan data.");
-        if (layers_received == 4)
+
+        // Check if this is the last layer of the msg
+        if (data.header.status_info.layer_angle == CoLaALayers::Layer4)
+        {
+          ROS_DEBUG("Publishing scan data.");
           cloud_pub.publish(cloud);
+        }
       }
       else
       {
         ROS_ERROR("Laser timed out on delivering scan, attempting to reinitialize.");
+        ros::Duration(10.0).sleep();
         break;
       }
 
       ros::spinOnce();
     }
 
-    laser.scanContinuous(false);
-    /*
-    laser.stopMeas();
-    */
     laser.disconnect();
   }
 
