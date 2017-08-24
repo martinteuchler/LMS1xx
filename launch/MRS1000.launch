@@ -1,8 +1,17 @@
 <launch>
   <arg name="host" default="192.168.2.140" />
   <arg name="port" default="2111" />
+  <arg name="range" default="64.0" />
+  <!-- first, last, all -->
+  <arg name="echoes" default="first" />
+  <!-- this affects which echo is used for the point cloud when "all" is selected above -->
+  <!-- first, strongest, all -->
+  <arg name="cloud_echoes" default="first" />
   <node pkg="lms1xx" name="lms1xx" type="MRS1000_node" output="screen">
     <param name="host" value="$(arg host)" />
     <param name="port" value="$(arg port)" />
+    <param name="range" value="$(arg range)" />
+    <param name="echoes" value="$(arg echoes)" />
+    <param name="cloud_echoes" value="$(arg cloud_echoes)" />
   </node>
 </launch>

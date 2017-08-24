@@ -41,6 +41,20 @@ enum Status : uint8_t
 };
 }
 
+namespace CoLaADeviceState
+{
+/**
+ * @brief Device status code as returned by sRA SCdevicestate
+ */
+enum State : uint8_t
+{
+  Busy = 0,
+  Ready = 1,
+  Error = 2,
+  Standby = 3 // LMS5xx, TiM5xx, MRS1000 only
+};
+}
+
 namespace CoLaASopasError
 {
 /**

@@ -61,6 +61,8 @@ CoLaA::CoLaA() : connected_(false)
 
   START_DEVICE_COMMAND = "sMN Run";
 
+  READ_DEVICE_STATE = "sRN SCdevicestate";
+
   SCAN_DATA_REPLY = "sEA LMDscandata";
 }
 
@@ -278,6 +280,20 @@ bool CoLaA::getScanData(void *scan_data)
       return false;
     }
   }
+}
+
+CoLaADeviceState::State CoLaA::getDeviceState()
+{
+  sendCommand(READ_DEVICE_STATE);
+  char buf[BUFSIZ];
+  size_t len = (sizeof buf);
+  readBack(buf, len);
+  char *parsable = &buf[0];
+  nextToken(&parsable); // Command type
+  nextToken(&parsable); // Command
+  uint8_t status;
+  nextToken(&parsable, status);
+  return static_cast<CoLaADeviceState::State>(status);
 }
 
 void CoLaA::doLogin(std::string user_class, std::string password)

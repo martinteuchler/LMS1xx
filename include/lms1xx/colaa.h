@@ -164,6 +164,12 @@ public:
   */
   bool getScanData(void *scan_data);
 
+  /**
+   * @brief Query device state
+   * @return the device state
+   */
+  CoLaADeviceState::State getDeviceState();
+
 protected:
   // Command names
   std::string LOGIN_COMMAND;
@@ -190,6 +196,8 @@ protected:
   std::string READ_SCAN_OUTPUT_RANGE_COMMAND;
 
   std::string START_DEVICE_COMMAND;
+
+  std::string READ_DEVICE_STATE;
 
   std::string SCAN_DATA_REPLY;
 
