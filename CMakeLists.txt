@@ -57,6 +57,12 @@ if (CATKIN_ENABLE_TESTING)
   target_link_libraries(test_colaa CoLaA ${catkin_LIBRARIES})
   add_dependencies(test_colaa CoLaA)
 
+  # Copy test data
+  file(COPY test/mrs1000.txt DESTINATION ${PROJECT_BINARY_DIR}/test)
+  catkin_add_gtest(test_mrs1000_scandata test/mrs1000_scandata_test.cpp)
+  target_link_libraries(test_mrs1000_scandata CoLaA ${catkin_LIBRARIES})
+  add_dependencies(test_mrs1000_scandata CoLaA)
+
   catkin_add_gtest(parse_helper_test test/parse_helper_test.cpp src/parse_helpers.cpp)
 
   find_package(roslint REQUIRED)
@@ -65,5 +71,7 @@ if (CATKIN_ENABLE_TESTING)
 
   find_package(roslaunch REQUIRED)
   roslaunch_add_file_check(launch/LMS1xx.launch)
+  roslaunch_add_file_check(launch/LMS5xx.launch)
+  roslaunch_add_file_check(launch/MRS1000.launch)
 endif()
 

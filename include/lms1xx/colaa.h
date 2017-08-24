@@ -25,6 +25,7 @@
 #include "lms1xx/colaa_structs.h"
 
 class LMSBuffer;
+class MRS1000ScanDataTest;
 
 /**
  * @brief Abstraction for communication with SICK sensors that use
@@ -37,6 +38,7 @@ class LMSBuffer;
  */
 class CoLaA
 {
+friend class MRS1000ScanDataTest;
 public:
   CoLaA();
   ~CoLaA();
