@@ -25,6 +25,7 @@
 #include "lms1xx/colaa_structs.h"
 
 class LMSBuffer;
+class MRS1000ScanDataTest;
 
 /**
  * @brief Abstraction for communication with SICK sensors that use
@@ -37,6 +38,7 @@ class LMSBuffer;
  */
 class CoLaA
 {
+friend class MRS1000ScanDataTest;
 public:
   CoLaA();
   ~CoLaA();
@@ -101,6 +103,13 @@ public:
   */
   void setScanDataConfig(const ScanDataConfig &cfg);
 
+  /**
+   * @brief Configures the echo return of the sensor
+   * Only supported on LMS5xx and MRS1000
+   * @param filter Which echoes to return
+   */
+  void setEchoFilter(CoLaAEchoFilter::EchoFilter filter);
+
   /*!
   * @brief Get current scan configuration.
   * Get scan configuration :
@@ -144,6 +153,11 @@ public:
   */
   void scanContinuous(bool start);
 
+  /**
+   * @brief Requests the last scan output from the device.
+   */
+  void requestLastScan();
+
   /*!
   * @brief Receive single scan message.
   * @param scan_data will be passed to parse_scan_data which can be overwritten by subclasses
@@ -151,6 +165,12 @@ public:
   *         logic should take correct action such as reopening the connection.
   */
   bool getScanData(void *scan_data);
+
+  /**
+   * @brief Query device state
+   * @return the device state
+   */
+  CoLaADeviceState::State getDeviceState();
 
 protected:
   // Command names
@@ -165,17 +185,23 @@ protected:
   std::string READ_SCAN_CFG_COMMAND;
   std::string SET_SCAN_CFG_COMMAND;
   std::string SET_SCAN_DATA_CFG_COMMAND;
+  std::string SET_ECHO_FILTER_COMMAND;
   std::string SAVE_CONFIG_COMMAND;
 
   std::string START_MEASUREMENT_COMMAND;
   std::string STOP_MEASUREMENT_COMMAND;
-  std::string START_CONT_COMMAND;
+  std::string REQUEST_SCANS_CONTINUOUSLY;
+  std::string REQUEST_LAST_SCAN;
 
   std::string QUERY_STATUS_COMMAND;
 
   std::string READ_SCAN_OUTPUT_RANGE_COMMAND;
 
   std::string START_DEVICE_COMMAND;
+
+  std::string READ_DEVICE_STATE;
+
+  std::string SCAN_DATA_REPLY;
 
   /**
    * @brief Sends login command
@@ -230,7 +256,7 @@ protected:
    * @param buffer the message to be parsed
    * @param data Destination for the parsed data, pass a ScanData pointer for the base implementation
    */
-  virtual void parseScanData(char *buffer, void *data) const;
+  virtual bool parseScanData(char *buffer, void *data) const;
 
   /**
    * @brief Parses the header part of the scan data message and returns it as a struct
