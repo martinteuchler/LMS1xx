@@ -251,6 +251,8 @@ int main(int argc, char **argv)
       ros::Time start = ros::Time::now();
 
       cloud.header.stamp = start;
+      scan.header.stamp = start;
+      multi_scan.header.stamp = start;
 
       //scanDataLayerMRS data;
       ScanData data;
