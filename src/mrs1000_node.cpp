@@ -190,7 +190,7 @@ int main(int argc, char **argv)
               output_range.angular_resolution, output_range.start_angle, output_range.stop_angle);
 
     multi_scan.scan_time = 100.0 / cfg.scan_frequency;
-    multi_scan.time_increment = (output_range.angular_resolution / 10000.0) / 360.0 / multi_scan.scan_time;
+    multi_scan.time_increment = (output_range.angular_resolution / 10000.0) / 360.0 / (cfg.scan_frequency / 100.0);
     scan.scan_time = multi_scan.scan_time;
     scan.time_increment = multi_scan.time_increment;
 
