@@ -48,6 +48,8 @@ CoLaA::CoLaA() : connected_(false)
   SET_SCAN_CFG_COMMAND = "sMN mLMPsetscancfg";
   SET_SCAN_DATA_CFG_COMMAND = "sWN LMDscandatacfg";
   SET_ECHO_FILTER_COMMAND = "sWN FREchoFilter";
+  SET_PARTICLE_FILTER_COMMAND = "sWN LFPparticle";
+  SET_MEAN_FILTER_COMMAND = "sWN LFPmeanfilter";
   SAVE_CONFIG_COMMAND = "sMN mEEwriteall";
 
   START_MEASUREMENT_COMMAND = "sMN LMCstartmeas";
@@ -171,6 +173,14 @@ void CoLaA::setEchoFilter(CoLaAEchoFilter::EchoFilter filter)
 {
   std::stringstream cmd;
   cmd << SET_ECHO_FILTER_COMMAND << " " << filter;
+  sendCommand(cmd.str());
+  readBack();
+}
+
+void CoLaA::setParticleFilter(bool particleFilter)
+{
+  std::stringstream cmd;
+  cmd << SET_PARTICLE_FILTER_COMMAND << " " << std::to_string(static_cast<int>(particleFilter)) << " " << std::to_string(static_cast<int>(500));
   sendCommand(cmd.str());
   readBack();
 }

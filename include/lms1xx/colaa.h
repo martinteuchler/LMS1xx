@@ -110,6 +110,8 @@ public:
    */
   void setEchoFilter(CoLaAEchoFilter::EchoFilter filter);
 
+  void setParticleFilter(bool particleFilter);
+
   /*!
   * @brief Get current scan configuration.
   * Get scan configuration :
@@ -186,6 +188,8 @@ protected:
   std::string SET_SCAN_CFG_COMMAND;
   std::string SET_SCAN_DATA_CFG_COMMAND;
   std::string SET_ECHO_FILTER_COMMAND;
+  std::string SET_MEAN_FILTER_COMMAND;
+  std::string SET_PARTICLE_FILTER_COMMAND;
   std::string SAVE_CONFIG_COMMAND;
 
   std::string START_MEASUREMENT_COMMAND;
