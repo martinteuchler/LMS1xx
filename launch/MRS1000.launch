@@ -11,7 +11,7 @@
   <!-- this affects which echo is used for the point cloud when "all" is selected above -->
   <!-- first, strongest, all -->
   <arg name="cloud_echoes" default="first" />
-  <node pkg="sickscanner" name="mrs1000" type="MRS1000_node" output="screen">
+  <node pkg="lms1xx" name="lms1xx" type="MRS1000_node" output="screen">
     <param name="host" value="$(arg host)" />
     <param name="port" value="$(arg port)" />
     <param name="range" value="$(arg range)" />
