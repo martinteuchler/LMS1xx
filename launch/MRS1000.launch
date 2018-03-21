@@ -18,7 +18,7 @@
     <param name="echoes" value="$(arg echoes)" />
     <param name="cloud_echoes" value="$(arg cloud_echoes)" />
     <param name="particle_filter" value="$(arg particle_filter)"/>
-		<param name="mean_filter" value="$(arg mean_filter)"/>
-		<param name="number_scans" value="$(arg number_scans)"/>
+    <param name="mean_filter" value="$(arg mean_filter)"/>
+    <param name="number_scans" value="$(arg number_scans)"/>
   </node>
 </launch>

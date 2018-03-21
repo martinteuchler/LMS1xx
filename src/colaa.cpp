@@ -180,7 +180,7 @@ void CoLaA::setEchoFilter(CoLaAEchoFilter::EchoFilter filter)
 void CoLaA::setParticleFilter(bool particle_filter)
 {
   std::stringstream cmd;
-  cmd << SET_PARTICLE_FILTER_COMMAND << " " << std::to_string(static_cast<bool>(particle_filter)) << " " << std::to_string(static_cast<int>(500));
+  cmd << SET_PARTICLE_FILTER_COMMAND << " " << std::to_string(particle_filter) << " " << std::to_string(500);
   sendCommand(cmd.str());
   readBack();
 }
@@ -188,7 +188,7 @@ void CoLaA::setParticleFilter(bool particle_filter)
 void CoLaA::setMeanFilter(bool mean_filter, uint16_t number_scans)
 {
   std::stringstream cmd;
-  cmd << SET_MEAN_FILTER_COMMAND << " " << std::to_string(static_cast<bool>(mean_filter)) << " " << std::to_string(static_cast<int>(number_scans)) << " " << std::to_string(static_cast<int>(0));
+  cmd << SET_MEAN_FILTER_COMMAND << " " << std::to_string(mean_filter) << " " << std::to_string(number_scans) << " " << std::to_string(0);
   sendCommand(cmd.str());
   readBack();
 }
