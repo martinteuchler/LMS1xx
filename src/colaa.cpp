@@ -48,6 +48,8 @@ CoLaA::CoLaA() : connected_(false)
   SET_SCAN_CFG_COMMAND = "sMN mLMPsetscancfg";
   SET_SCAN_DATA_CFG_COMMAND = "sWN LMDscandatacfg";
   SET_ECHO_FILTER_COMMAND = "sWN FREchoFilter";
+  SET_PARTICLE_FILTER_COMMAND = "sWN LFPparticle";
+  SET_MEAN_FILTER_COMMAND = "sWN LFPmeanfilter";
   SAVE_CONFIG_COMMAND = "sMN mEEwriteall";
 
   START_MEASUREMENT_COMMAND = "sMN LMCstartmeas";
@@ -121,7 +123,8 @@ void CoLaA::login()
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
-    doLogin(LOGIN_USER_AUTHORIZED, LOGIN_PASS_AUTHORIZED);
+    //doLogin(LOGIN_USER_AUTHORIZED, LOGIN_PASS_AUTHORIZED);
+    doLogin(LOGIN_USER_SERVICE, LOGIN_PASS_SERVICE);
 
     FD_ZERO(&readset);
     FD_SET(socket_fd_, &readset);
@@ -171,6 +174,22 @@ void CoLaA::setEchoFilter(CoLaAEchoFilter::EchoFilter filter)
 {
   std::stringstream cmd;
   cmd << SET_ECHO_FILTER_COMMAND << " " << filter;
+  sendCommand(cmd.str());
+  readBack();
+}
+
+void CoLaA::setParticleFilter(bool particle_filter)
+{
+  std::stringstream cmd;
+  cmd << SET_PARTICLE_FILTER_COMMAND << " " << std::to_string(static_cast<bool>(particle_filter)) << " " << std::to_string(static_cast<int>(500));
+  sendCommand(cmd.str());
+  readBack();
+}
+
+void CoLaA::setMeanFilter(bool mean_filter, uint16_t number_scans)
+{
+  std::stringstream cmd;
+  cmd << SET_MEAN_FILTER_COMMAND << " " << std::to_string(static_cast<bool>(mean_filter)) << " " << std::to_string(static_cast<int>(number_scans)) << " " << std::to_string(static_cast<int>(0));
   sendCommand(cmd.str());
   readBack();
 }
