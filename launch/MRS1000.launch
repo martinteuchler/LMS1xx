@@ -2,6 +2,7 @@
   <arg name="host" default="192.168.2.143" />
   <arg name="port" default="2111" />
   <arg name="range" default="64.0" />
+  <!-- particle_filter and mean_filter can be used at the same time -->
   <arg name="particle_filter" default="true"/>
   <arg name="mean_filter" default="false"/>
   <!-- only used if mean_filter set to true -->	
