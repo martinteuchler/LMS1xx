@@ -3,7 +3,8 @@
   <arg name="port" default="2111" />
   <arg name="range" default="64.0" />
   <arg name="particle_filter" default="true"/>
-  <arg name="mean_filter" default="true"/>
+  <arg name="mean_filter" default="false"/>
+  <!-- only used if mean_filter set to true -->	
   <arg name="number_scans" default="2"/>
   <!-- first, last, all -->
   <arg name="echoes" default="last" />
