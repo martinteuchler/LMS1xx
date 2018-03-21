@@ -123,8 +123,7 @@ void CoLaA::login()
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
-    //doLogin(LOGIN_USER_AUTHORIZED, LOGIN_PASS_AUTHORIZED);
-    doLogin(LOGIN_USER_SERVICE, LOGIN_PASS_SERVICE);
+    doLogin(LOGIN_USER_AUTHORIZED, LOGIN_PASS_AUTHORIZED);
 
     FD_ZERO(&readset);
     FD_SET(socket_fd_, &readset);

@@ -134,12 +134,6 @@ enum EchoFilter : uint8_t
 };
 }
 
-/*namespace CoLaAParticleFilter
-{
-bool SetParticleFilter = false;
-uint16_t ParticleThreshold = 500;
-}*/
-
 namespace CoLaALayers
 {
 enum Layers : uint16_t
